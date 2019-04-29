@@ -1,15 +1,15 @@
-struct TranslationUnit {
+public struct TranslationUnit {
     let externalDecls: [ExternalDeclaration]
 }
 
 
-enum ExternalDeclaration {
+public enum ExternalDeclaration {
     case functionDefinition(FunctionDefinition)
     case decl(Declaration)
 }
 
 
-struct FunctionDefinition {
+public struct FunctionDefinition {
     let declarationSpecifier: [DeclarationSpecifier]
     let declarator: Declarator
     let declaration: [Declaration]
@@ -17,92 +17,92 @@ struct FunctionDefinition {
 }
 
 
-struct Declaration {
+public struct Declaration {
     let declarationSpecifier: [DeclarationSpecifier]
     let initDeclarator: [InitDeclarator]
 }
 
 
-enum DeclarationSpecifier: Equatable {
+public enum DeclarationSpecifier: Equatable {
     case storageClassSpecifier(StorageClassSpecifier)
     case typeSpecifier(TypeSpecifier)
     case typeQualifier(TypeQualifier)
 }
 
-struct Declarator: Equatable {
+public struct Declarator: Equatable {
     let pointer: Pointer?
     let directDeclarator: DirectDeclarator
 }
 
-struct CompoundStatement {
+public struct CompoundStatement {
     let declaration: [Declaration]
     let statement: [Statement]
 }
 
-enum Statement {
+public enum Statement {
 //    case labeled
     case expression(ExpressionStatement)
 }
 
-struct ExpressionStatement {
+public struct ExpressionStatement {
     let expression: Expression?
 }
 
-enum Expression {
+public enum Expression {
     case assignment(AssignmentExpression)
 }
 
-indirect enum AssignmentExpression {
+indirect public enum AssignmentExpression {
     case conditional(UnaryExpression) // TODO
     case assignment(UnaryExpression, AssignmentOperator, AssignmentExpression)
 }
 
-enum UnaryExpression {
+public enum UnaryExpression {
     case postfix(PostfixExpression)
 }
 
-indirect enum PostfixExpression {
+indirect public enum PostfixExpression {
     case primary(PrimaryExpression)
     case functionCall(PostfixExpression, AssignmentExpression)
 }
 
-enum PrimaryExpression {
+public enum PrimaryExpression {
     case identifier(String)
     case constant(Constant)
     case string(String)
 }
 
-enum Constant {
+public enum Constant {
     case integer(Int)
 }
 
-enum AssignmentOperator {
+public enum AssignmentOperator {
     case equal // =
 }
 
-enum StorageClassSpecifier: String {
+public enum StorageClassSpecifier: String {
     case auto, register, `static`, extern, typedef
 }
 
-enum TypeSpecifier: String {
+public enum TypeSpecifier: String {
     case char, short, int, long, float, double, signed, unsigned
 }
 
-enum TypeQualifier: String {
+public enum TypeQualifier: String {
     case const, volatile
 }
 
-struct InitDeclarator {
+public struct InitDeclarator {
     let declarator: Declarator
     let initializer: Initializer?
 }
 
-enum Initializer {
+public enum Initializer {
     case assignment(AssignmentExpression)
     case initializerList([Initializer])
 }
 
-struct Pointer: Equatable {
+public struct Pointer: Equatable {
     let typeQualifier: [TypeQualifier]
     let pointer: Box<Pointer?>
 }
@@ -120,7 +120,7 @@ extension Box: Equatable where T: Equatable {
     }
 }
 
-indirect enum DirectDeclarator: Equatable {
+indirect public enum DirectDeclarator: Equatable {
     case declarator(Declarator)
     case declaratorWithIdentifiers(DirectDeclarator, [String])
     case identifier(String)

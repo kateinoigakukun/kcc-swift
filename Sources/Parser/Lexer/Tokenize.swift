@@ -1,3 +1,6 @@
+func lex(_ string: String) throws -> [Token] {
+    return try lex().parse(.root(string)).0
+}
 func lex() -> Lexer<[Token]> {
     return lexToken().flatMap { result -> Lexer<[Token]> in
         switch result {

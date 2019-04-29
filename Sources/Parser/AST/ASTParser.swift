@@ -5,6 +5,10 @@ enum ASTPhase: ParserPhase {
 }
 typealias ASTParser<T> = Parser<ASTPhase, T>
 
+public func parse(_ tokens: [Token]) throws -> TranslationUnit {
+    return try parseTranslationUnit().parse(.root(tokens)).0
+}
+
 func parseTranslationUnit() -> ASTParser<TranslationUnit> {
     return TranslationUnit.init <^>// many(
         parseExternalDeclaration().map { [$0] }

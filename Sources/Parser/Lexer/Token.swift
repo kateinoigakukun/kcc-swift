@@ -1,4 +1,4 @@
-enum Token: Equatable {
+public enum Token: Equatable {
     case leftParen    // (
     case rightParen   // )
     case leftBrace    // {
