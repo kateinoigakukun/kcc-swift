@@ -27,7 +27,7 @@ public class CodeGenerator {
                 for statement in funcDefinition.compoundStatement.statement {
                     gen(statement)
                 }
-                builder.raw("ret")
+                builder.raw("  ret")
             default: notImplemented()
             }
         default:
@@ -45,8 +45,9 @@ public class CodeGenerator {
 
     fileprivate func gen(_ expr: Expression) {
         if let (funcName, argument) = expr.functionCall {
-            builder.mov(.rdi, argument)
+            builder.push(argument)
             builder.call(funcName)
+            builder.add(.rsp, 8)
         }
     }
 
@@ -78,13 +79,17 @@ public class CodeGenerator {
          ret
         */
         builder.globalLabel("print_char")
-        builder.mov(.r8, .rdi)
+        builder.push(.rbp)
+        builder.mov(.rbp, .rsp)
+        builder.mov(.r8, "[\(Reg.rbp) + 16]")
         builder.mov(.rax, .write)
         builder.mov(.rdi, 1)
-        builder.raw("mov [rsi], r8")
+        builder.raw("  mov [rsi], r8")
         builder.mov(.rdx, 1)
         builder.syscall()
-        builder.raw("ret")
+        builder.mov(.rsp, .rbp)
+        builder.pop(.rbp)
+        builder.raw("  ret")
     }
 }
 

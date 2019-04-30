@@ -6,6 +6,7 @@ extension ParserTests {
     //   `swift test --generate-linuxmain`
     // to regenerate.
     static let __allTests__ParserTests = [
+        ("testMultiDeclParse", testMultiDeclParse),
         ("testParse", testParse),
         ("testParseFunctionCall", testParseFunctionCall),
     ]

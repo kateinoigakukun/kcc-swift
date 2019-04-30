@@ -3,8 +3,13 @@ import Parser
 import CodeGen
 
 public class Driver {
-    public init() {}
-    public func run(arguments: [String]) {
+    let arguments: [String]
+    let isVerbose: Bool
+    public init(arguments: [String]) {
+        self.arguments = arguments
+        self.isVerbose = arguments.contains("-v")
+    }
+    public func run() {
         guard arguments.count > 2 else {
             help()
             return
@@ -44,6 +49,7 @@ public class Driver {
             .appendingPathComponent(UUID().uuidString)
             .appendingPathExtension("asm").path
         try code.write(toFile: tmpFile, atomically: true, encoding: .utf8)
+        if isVerbose { fputs("Code was generated to \(tmpFile)", stdout) }
         nasm(tmpFile)
         let objectFilePath = tmpFile
             .split(separator: ".").dropLast()
