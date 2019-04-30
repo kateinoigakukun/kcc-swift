@@ -11,6 +11,9 @@ let package = Package(
     ],
     targets: [
         .target(
+            name: "CodeGen",
+            dependencies: ["Parser"]),
+        .target(
             name: "Parser",
             dependencies: ["Curry"]),
         .testTarget(

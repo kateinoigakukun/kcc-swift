@@ -10,9 +10,7 @@ public func parse(_ tokens: [Token]) throws -> TranslationUnit {
 }
 
 func parseTranslationUnit() -> ASTParser<TranslationUnit> {
-    return TranslationUnit.init <^>// many(
-        parseExternalDeclaration().map { [$0] }
-    //)
+    return TranslationUnit.init <^> many(parseExternalDeclaration())
 }
 
 func parseExternalDeclaration() -> ASTParser<ExternalDeclaration> {
@@ -143,6 +141,7 @@ func parseUnaryExpression() -> ASTParser<UnaryExpression> {
 func parsePostfixExpression() -> ASTParser<PostfixExpression> {
     return choice([
         curry(PostfixExpression.functionCall)
+            // TODO: Support recursive. Use parsePostFixExpression()
             <^> parsePrimaryExpression().map(PostfixExpression.primary)
             <*> match(.leftParen) *> parseAssignmentExpression() <* match(.rightParen),
         PostfixExpression.primary <^> parsePrimaryExpression(),
@@ -217,6 +216,20 @@ func mapIdentifier<T>(_ f: @escaping (String) -> T?) -> ASTParser<T> {
         case .identifier(let identifier):
             return f(identifier)
         default: return nil
+        }
+    }
+}
+
+enum SatisfyPeekError: Error {
+    case invalid
+}
+
+func satisfyPeek(_ f: @escaping (Token) -> Bool) -> ASTParser<Void> {
+    return ASTParser { input in
+        if f(input.collection[input.startIndex]) {
+            return ((), input)
+        } else {
+            throw SatisfyPeekError.invalid
         }
     }
 }
