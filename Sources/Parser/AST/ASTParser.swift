@@ -59,7 +59,7 @@ func parseDirectDeclarator() -> ASTParser<DirectDeclarator> {
             curry(DirectDeclarator.declaratorWithIdentifiers)
                 <^> mapIdentifier(DirectDeclarator.identifier) // TODO
                 <*> (
-                    match(.leftParen) *> mapIdentifier({ [$0 ] }) <* match(.rightParen)
+                    match(.leftParen) *> many(mapIdentifier(id)) <* match(.rightParen)
             )
         ]
     )

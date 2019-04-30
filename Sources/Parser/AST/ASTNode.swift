@@ -1,5 +1,5 @@
 public struct TranslationUnit {
-    let externalDecls: [ExternalDeclaration]
+    public let externalDecls: [ExternalDeclaration]
 }
 
 
@@ -10,16 +10,16 @@ public enum ExternalDeclaration {
 
 
 public struct FunctionDefinition {
-    let declarationSpecifier: [DeclarationSpecifier]
-    let declarator: Declarator
-    let declaration: [Declaration]
-    let compoundStatement: CompoundStatement
+    public let declarationSpecifier: [DeclarationSpecifier]
+    public let declarator: Declarator
+    public let declaration: [Declaration]
+    public let compoundStatement: CompoundStatement
 }
 
 
 public struct Declaration {
-    let declarationSpecifier: [DeclarationSpecifier]
-    let initDeclarator: [InitDeclarator]
+    public let declarationSpecifier: [DeclarationSpecifier]
+    public let initDeclarator: [InitDeclarator]
 }
 
 
@@ -30,13 +30,13 @@ public enum DeclarationSpecifier: Equatable {
 }
 
 public struct Declarator: Equatable {
-    let pointer: Pointer?
-    let directDeclarator: DirectDeclarator
+    public let pointer: Pointer?
+    public let directDeclarator: DirectDeclarator
 }
 
 public struct CompoundStatement {
-    let declaration: [Declaration]
-    let statement: [Statement]
+    public let declaration: [Declaration]
+    public let statement: [Statement]
 }
 
 public enum Statement {
@@ -45,11 +45,37 @@ public enum Statement {
 }
 
 public struct ExpressionStatement {
-    let expression: Expression?
+    public let expression: Expression?
 }
 
 public enum Expression {
     case assignment(AssignmentExpression)
+    var assignment: AssignmentExpression? {
+        switch self {
+        case .assignment(let assignment):
+            return assignment
+        }
+    }
+
+
+    // TODO: Support only integer argument now
+    public var functionCall: (String, Int)? {
+        switch self {
+        case .assignment(
+            .conditional(
+                .postfix(
+                    .functionCall(
+                        .primary(.identifier(let name)),
+                        .conditional(.postfix(.primary(.constant(.integer(let arg)))))
+                    )
+                )
+            )
+            ):
+            return (name, arg)
+        default:
+            return nil
+        }
+    }
 }
 
 indirect public enum AssignmentExpression {
@@ -93,8 +119,8 @@ public enum TypeQualifier: String {
 }
 
 public struct InitDeclarator {
-    let declarator: Declarator
-    let initializer: Initializer?
+    public let declarator: Declarator
+    public let initializer: Initializer?
 }
 
 public enum Initializer {
@@ -103,19 +129,19 @@ public enum Initializer {
 }
 
 public struct Pointer: Equatable {
-    let typeQualifier: [TypeQualifier]
-    let pointer: Box<Pointer?>
+    public let typeQualifier: [TypeQualifier]
+    public let pointer: Box<Pointer?>
 }
 
-class Box<T> {
-    let value: T
+public class Box<T> {
+    public let value: T
     init(_ value: T) {
         self.value = value
     }
 }
 
 extension Box: Equatable where T: Equatable {
-    static func == (lhs: Box<T>, rhs: Box<T>) -> Bool {
+    public static func == (lhs: Box<T>, rhs: Box<T>) -> Bool {
         return lhs.value == rhs.value
     }
 }

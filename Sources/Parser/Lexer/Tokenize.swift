@@ -1,4 +1,4 @@
-func lex(_ string: String) throws -> [Token] {
+public func lex(_ string: String) throws -> [Token] {
     return try lex().parse(.root(string)).0
 }
 func lex() -> Lexer<[Token]> {
