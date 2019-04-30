@@ -1,7 +1,10 @@
 import XCTest
 
-import swccTests
+import CodeGenTests
+import ParserTests
 
 var tests = [XCTestCaseEntry]()
-tests += swccTests.allTests()
+tests += CodeGenTests.__allTests()
+tests += ParserTests.__allTests()
+
 XCTMain(tests)

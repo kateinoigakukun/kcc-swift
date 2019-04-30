@@ -3,7 +3,7 @@
 import PackageDescription
 
 let package = Package(
-    name: "swcc",
+    name: "kcc",
     products: [
     ],
     dependencies: [

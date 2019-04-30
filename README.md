@@ -1,3 +1,3 @@
-# swcc
+# kcc
 
-A description of this package.
+kateinoigakukun's C compiler written in Swift
