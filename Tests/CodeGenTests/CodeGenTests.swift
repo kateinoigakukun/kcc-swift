@@ -6,7 +6,7 @@ final class CodeGenTests: XCTestCase {
     func testCodeGen() throws {
         let content = """
         int main() {
-            print_int(65);
+            print_char(65);
         }
         """
         let tokens = try lex(content)
@@ -18,7 +18,7 @@ final class CodeGenTests: XCTestCase {
             """
             global _main
             section .text
-            print_int:
+            print_char:
             mov r8, rdi
             mov rax, 33554436
             mov rdi, 1
@@ -28,7 +28,7 @@ final class CodeGenTests: XCTestCase {
             ret
             main:
             mov rdi, 65
-            call print_int
+            call print_char
             ret
             _main:
             call main

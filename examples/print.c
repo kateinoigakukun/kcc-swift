@@ -1,3 +1,3 @@
 int main() {
-    print_int(65);
+    print_char(65);
 }

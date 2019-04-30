@@ -11,7 +11,7 @@ public class CodeGenerator {
     func gen(_ unit: TranslationUnit) {
         builder.raw("global _main")
         builder.section(.text)
-        genPrint_int()
+        genPrint_char()
         for decl in unit.externalDecls {
             gen(decl)
         }
@@ -65,9 +65,9 @@ public class CodeGenerator {
         builder.syscall()
     }
 
-    fileprivate func genPrint_int() {
+    fileprivate func genPrint_char() {
         /*
-         print_int:
+         print_char:
          mov     r8, rdi
          mov     rax, 0x2000004
          mov     rdi, 1
@@ -76,7 +76,7 @@ public class CodeGenerator {
          syscall
          ret
         */
-        builder.globalLabel("print_int")
+        builder.globalLabel("print_char")
         builder.mov(.r8, .rdi)
         builder.mov(.rax, 0x2000004)
         builder.mov(.rdi, 1)
