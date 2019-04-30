@@ -12,9 +12,8 @@ final class CodeGenTests: XCTestCase {
         let tokens = try lex(content)
         let unit = try parse(tokens)
         let generator = CodeGenerator()
-        generator.gen(unit)
         XCTAssertEqual(
-            generator.builder.code,
+            generator.generate(unit),
             """
             global _main
             section .text

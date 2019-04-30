@@ -111,7 +111,7 @@ public enum StorageClassSpecifier: String {
 }
 
 public enum TypeSpecifier: String {
-    case char, short, int, long, float, double, signed, unsigned
+    case char, short, int, long, float, double, signed, unsigned, void
 }
 
 public enum TypeQualifier: String {

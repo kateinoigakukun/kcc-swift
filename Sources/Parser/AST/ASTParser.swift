@@ -148,6 +148,13 @@ func parsePostfixExpression() -> ASTParser<PostfixExpression> {
     ])
 }
 
+// TODO: Use this
+func parseArgumentExpressionList() -> ASTParser<[AssignmentExpression]> {
+    return cons <^> parseAssignmentExpression()
+        <*> many(match(.comma) *> parseAssignmentExpression())
+}
+
+
 func parsePrimaryExpression() -> ASTParser<PrimaryExpression> {
     return choice(
         [

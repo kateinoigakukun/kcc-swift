@@ -8,7 +8,7 @@ public class CodeGenerator {
         gen(unit)
         return builder.code
     }
-    func gen(_ unit: TranslationUnit) {
+    fileprivate func gen(_ unit: TranslationUnit) {
         builder.raw("global _main")
         builder.section(.text)
         genPrint_char()
@@ -17,6 +17,7 @@ public class CodeGenerator {
         }
         gen_main()
     }
+
     fileprivate func gen(_ decl: ExternalDeclaration) {
         switch decl {
         case .functionDefinition(let funcDefinition):
@@ -60,7 +61,7 @@ public class CodeGenerator {
         */
         builder.globalLabel("_main")
         builder.call("main")
-        builder.mov(.rax, 0x2000001)
+        builder.mov(.rax, .exit)
         builder.mov(.rdi, 0)
         builder.syscall()
     }
@@ -78,7 +79,7 @@ public class CodeGenerator {
         */
         builder.globalLabel("print_char")
         builder.mov(.r8, .rdi)
-        builder.mov(.rax, 0x2000004)
+        builder.mov(.rax, .write)
         builder.mov(.rdi, 1)
         builder.raw("mov [rsi], r8")
         builder.mov(.rdx, 1)
