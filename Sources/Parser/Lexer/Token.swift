@@ -5,24 +5,24 @@ public enum Token: Equatable {
     case rightBrace   // }
     case leftBracket  // [
     case rightBracket // ]
-    case semicolon   // ;
+    case semicolon    // ;
     case comma        //,
     case string(String)
     case char(Character)
     case integer(Int)
     case identifier(String)
 
-    case assign // =
+    case assign      // =
     case greaterThan // >
-    case lessThan //<
-    case multiply //*
-    case divide // /
-    case and   // &
-    case not // !
-    case plus // +
-    case minus // -
-    case notEqual // !=
-    case equal // ==
+    case lessThan    //<
+    case multiply    //*
+    case divide      // /
+    case and         // &
+    case not         // !
+    case plus        // +
+    case minus       // -
+    case notEqual    // !=
+    case equal       // ==
 
     case eof
 }
