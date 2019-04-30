@@ -1,10 +1,13 @@
 enum Reg: String {
     case rax
-    case rdi
-    case rdx
-    case r8
     case rbp
     case rsp
+
+    @available(*, deprecated)
+    case rdi, rdx, r8
+}
+enum ArgReg: String {
+    case rdi, rsi, rdx, rcx, r8, r9
 }
 
 enum Section: String {
@@ -19,9 +22,14 @@ enum SystemCall: Int {
 
 class X86_64Builder {
     var code: String
+    let stack: Stack
+    class Stack {
+        fileprivate(set) var depth: Int = 0
+    }
 
     init() {
         self.code = ""
+        self.stack = .init()
     }
 
     func raw(_ code: String) {
@@ -64,14 +72,17 @@ class X86_64Builder {
     }
 
     func push(_ value: Int) {
+        stack.depth += 8
         self.raw("  push \(value)")
     }
 
     func push(_ reg: Reg) {
+        stack.depth += 8
         self.raw("  push \(reg.rawValue)")
     }
 
     func pop(_ reg: Reg) {
+        stack.depth -= 8
         self.raw("  pop \(reg.rawValue)")
     }
 

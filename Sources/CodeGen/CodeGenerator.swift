@@ -15,7 +15,7 @@ public class CodeGenerator {
         for decl in unit.externalDecls {
             gen(decl)
         }
-        gen_main()
+        genEntry()
     }
 
     fileprivate func gen(_ decl: ExternalDeclaration) {
@@ -51,7 +51,7 @@ public class CodeGenerator {
         }
     }
 
-    fileprivate func gen_main() {
+    fileprivate func genEntry() {
         /*
          _main:
          call main
