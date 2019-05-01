@@ -74,6 +74,9 @@ class X86_64Builder {
     func mov(_ dst: Reg, _ src: String) {
         self.inst("mov", dst.rawValue, src)
     }
+    func mov(_ dst: ArgReg, _ src: Reg) {
+        self.inst("mov", dst.rawValue, src.rawValue)
+    }
 
     func call(_ label: String) {
         self.raw("  call \(label)")

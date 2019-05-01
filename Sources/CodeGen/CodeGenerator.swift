@@ -63,10 +63,12 @@ public class CodeGenerator {
              // TODO: Make scope from global scope
             var scope = Scope()
             for (index, argument) in arguments.enumerated() {
-                guard index % 2 != 0 else { continue }
+                guard case let .identifier(id) = argument.declarator.directDeclarator else {
+                    unimplemented()
+                }
                 // TODO: support type check
-                let register = ArgReg.allCases[index/2]
-                scope[argument] = Binding(type: .int, ref: .register(register))
+                let register = ArgReg.allCases[index]
+                scope[id] = Binding(type: .int, ref: .register(register))
             }
             for statement in funcDefinition.compoundStatement.statement {
                 scope = gen(statement, scope: scope)
@@ -89,7 +91,6 @@ public class CodeGenerator {
         switch expr {
         case .assignment(let assignment):
             return gen(assignment, scope: scope).1
-        default: unimplemented()
         }
     }
     fileprivate func gen(
@@ -106,7 +107,6 @@ public class CodeGenerator {
         switch unary {
         case .postfix(let postfix):
             return gen(postfix, scope: scope)
-        default: unimplemented()
         }
     }
 
@@ -133,7 +133,8 @@ public class CodeGenerator {
                 builder.mov(dist, reference)
             }
             builder.call(identifier)
-            builder.add(.rsp, arguments.count * 8)
+//            Comment out until supporting multiple arguments than 6
+//            builder.add(.rsp, arguments.count * 8)
             return (.register(Reg.rax), scope)
         default: unimplemented()
         }
@@ -167,12 +168,14 @@ public class CodeGenerator {
          ret
         */
         builder.globalLabel("print_char")
-        builder.mov(.r8, .rdi)
+        builder.mov(Reg.r8, .rdi)
         builder.mov(.rax, .write)
         builder.mov(.rdi, 1)
-        builder.raw("  mov [rsi], r8")
+        builder.push(.r8)
+        builder.mov(ArgReg.rsi, Reg.rsp)
         builder.mov(.rdx, 1)
         builder.syscall()
+        builder.pop(.rbp)
         builder.ret()
     }
 }

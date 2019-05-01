@@ -179,7 +179,27 @@ extension Box: Equatable where T: Equatable {
 
 indirect public enum DirectDeclarator: Equatable {
     case declarator(Declarator)
-    case declaratorWithIdentifiers(DirectDeclarator, [String])
+    case declaratorWithIdentifiers(DirectDeclarator, ParameterTypeList)
     case identifier(String)
     // TODO
+}
+
+public enum ParameterTypeList: Equatable, Sequence {
+    case variadic(ParameterList)
+    case `default`(ParameterList)
+
+    public typealias Iterator = ParameterList.Iterator
+    public __consuming func makeIterator() -> ParameterList.Iterator {
+        switch self {
+        case .default(let list), .variadic(let list):
+            return list.makeIterator()
+        }
+    }
+}
+
+public typealias ParameterList = [ParameterDeclaration]
+
+public struct ParameterDeclaration: Equatable {
+    public let declarationSpecifier: [DeclarationSpecifier]
+    public let declarator: Declarator
 }

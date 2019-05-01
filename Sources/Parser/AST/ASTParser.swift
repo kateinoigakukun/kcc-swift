@@ -59,10 +59,28 @@ func parseDirectDeclarator() -> ASTParser<DirectDeclarator> {
             curry(DirectDeclarator.declaratorWithIdentifiers)
                 <^> mapIdentifier(DirectDeclarator.identifier) // TODO
                 <*> (
-                    match(.leftParen) *> many(mapIdentifier(id)) <* match(.rightParen)
-            )
+                    match(.leftParen) *> parseParameterTypeList() <* match(.rightParen)
+            ),
+            curry(DirectDeclarator.identifier) <^> mapIdentifier(id),
         ]
     )
+}
+
+func parseParameterTypeList() -> ASTParser<ParameterTypeList> {
+    return curry(ParameterTypeList.default) <^> parseParameterList()
+        <|> .pure(.default([]))
+}
+
+func parseParameterList() -> ASTParser<ParameterList> {
+    return cons
+        <^> parseParameterDeclaration()
+        <*> many(match(.comma) *> parseParameterDeclaration())
+}
+
+func parseParameterDeclaration() -> ASTParser<ParameterDeclaration> {
+    return curry(ParameterDeclaration.init)
+        <^> many(parseDeclarationSpecifier())
+        <*> parseDeclarator()
 }
 
 func parseDeclaration() -> ASTParser<Declaration> {

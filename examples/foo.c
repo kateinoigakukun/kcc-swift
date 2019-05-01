@@ -1,6 +1,6 @@
-void foo() {
-    print_char(65);
+void foo(int value1, int value2) {
+    print_char(value2);
 }
 int main() {
-    foo(1);
+    foo(61, 65);
 }

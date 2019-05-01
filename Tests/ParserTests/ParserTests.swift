@@ -36,6 +36,16 @@ final class ParserTests: XCTestCase {
         XCTAssertEqual(unit.externalDecls.count, 2)
     }
 
+    func testArgumentParse() throws {
+        let content = """
+        int main(int args) {
+        }
+        """
+        let tokens = try lex(content)
+        let unit = try parse(tokens)
+        XCTAssertEqual(unit.externalDecls.count, 1)
+    }
+
     func testParse() throws {
         let content = """
         int main() {
@@ -62,7 +72,7 @@ final class ParserTests: XCTestCase {
         switch decl {
         case .functionDefinition(let function):
             XCTAssertEqual(function.declarationSpecifier, [.typeSpecifier(.int)])
-            XCTAssertEqual(function.declarator.directDeclarator, .declaratorWithIdentifiers(.identifier("main"), []))
+            XCTAssertEqual(function.declarator.directDeclarator, .declaratorWithIdentifiers(.identifier("main"), .default([])))
             XCTAssertEqual(function.compoundStatement.statement.count, 1)
         default: XCTFail()
         }
