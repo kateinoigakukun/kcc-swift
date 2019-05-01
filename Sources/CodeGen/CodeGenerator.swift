@@ -2,7 +2,7 @@ import Parser
 
 public class CodeGenerator {
     enum Reference {
-        case register(Register)
+        case register(Operandable)
         case stack(depth: Int)
         case primitive(Int)
     }
@@ -30,7 +30,7 @@ public class CodeGenerator {
             return Scope(parent: self)
         }
     }
-    let builder: X86_64Builder = .init()
+    let builder: BuilderOverloads = X86_64Builder.init()
 
     public init() {}
     public func generate(_ unit: TranslationUnit) -> String {
@@ -38,7 +38,7 @@ public class CodeGenerator {
         return builder.code
     }
     fileprivate func gen(_ unit: TranslationUnit) {
-        builder.raw("global _main")
+        builder.global("_main")
         builder.section(.text)
         genPrint_char()
         for decl in unit.externalDecls {
@@ -59,7 +59,7 @@ public class CodeGenerator {
     fileprivate func gen(_ funcDefinition: FunctionDefinition) {
         switch funcDefinition.declarator.directDeclarator {
         case .declaratorWithIdentifiers(.identifier(let name), let arguments):
-            builder.globalLabel(name)
+            builder.label(name)
              // TODO: Make scope from global scope
             var scope = Scope()
             for (index, argument) in arguments.enumerated() {
@@ -149,7 +149,7 @@ public class CodeGenerator {
          syscall
 
         */
-        builder.globalLabel("_main")
+        builder.label("_main")
         builder.call("main")
         builder.mov(.rax, .exit)
         builder.mov(.rdi, 0)
@@ -167,12 +167,12 @@ public class CodeGenerator {
          syscall
          ret
         */
-        builder.globalLabel("print_char")
-        builder.mov(Reg.r8, .rdi)
+        builder.label("print_char")
+        builder.mov(.r10, .rdi)
         builder.mov(.rax, .write)
         builder.mov(.rdi, 1)
-        builder.push(.r8)
-        builder.mov(ArgReg.rsi, Reg.rsp)
+        builder.push(.r10)
+        builder.mov(.rsi, .rsp)
         builder.mov(.rdx, 1)
         builder.syscall()
         builder.pop(.rbp)

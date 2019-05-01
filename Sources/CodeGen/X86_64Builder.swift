@@ -1,26 +1,28 @@
-protocol Register {
-    var rawValue: String { get }
-}
-enum Reg: String, Register {
-    case rax
-    case rbp
-    case rsp
+// For making overloads easily
+protocol BuilderOverloads {
+    var code: String { get }
 
-    @available(*, deprecated)
-    case rdi, rdx, r8
-}
-enum ArgReg: String, Register, CaseIterable {
-    case rdi, rsi, rdx, rcx, r8, r9
-}
+    func section(_ section: Section)
 
-enum Section: String {
-    case data
-    case text
-}
+    func global(_ name: String)
+    func label(_ label: String)
 
-enum SystemCall: Int {
-    case exit  = 0x2000001
-    case write = 0x2000004
+    func call(_ label: String)
+
+    func syscall()
+
+    func ret()
+
+    func mov(_ dst: Reg, _ src: Reg)
+    func mov(_ dst: Reg, _ src: ArgReg)
+    func mov(_ dst: ArgReg, _ src: Reg)
+    func mov(_ dst: Reg, _ src: SystemCall)
+    func mov(_ dst: ArgReg, _ src: Int)
+    func mov(_ dst: Reg, _ src: Int)
+    func mov(_ dst: ArgReg, _ src: CodeGenerator.Reference)
+
+    func pop(_ reg: Reg)
+    func push(_ reg: Reg)
 }
 
 class X86_64Builder {
@@ -39,73 +41,53 @@ class X86_64Builder {
         self.code += code + "\n"
     }
 
-    func section(_ section: Section) {
-        self.raw("section .\(section)")
+    func inst(_ inst: String) {
+        self.raw("  \(inst)")
     }
 
-    func inst(_ inst: String, _ dst: String, _ src: String) {
-        self.raw("  \(inst) \(dst), \(src)")
+    func inst(_ inst: String, _ target: Operandable) {
+        self.raw("  \(inst) \(target.asOperand())")
     }
 
-    func globalLabel(_ label: String) {
-        self.raw("\(label):")
+    func inst(_ inst: String, _ dst: Operandable, _ src: Operandable) {
+        self.raw("  \(inst) \(dst.asOperand()), \(src.asOperand())")
     }
 
-    func mov(_ dst: ArgReg, _ src: CodeGenerator.Reference) {
-        switch src {
-        case .register(let srcReg):
-            self.inst("mov", dst.rawValue, srcReg.rawValue)
-        case .primitive(let integer):
-            self.inst("mov", dst.rawValue, integer.description)
-        default: unimplemented()
-        }
-    }
-    func mov(_ dst: Reg, _ src: Reg) {
-        self.inst("mov", dst.rawValue, src.rawValue)
-    }
+    func section(_ section: Section) { self.raw("section .\(section)") }
+    func global(_ name: String) { self.raw("global \(name)") }
+    func label(_ label: String) { self.raw("\(label):") }
+    func call(_ label: String) { self.inst("call", label) }
+    func syscall() { self.inst("syscall") }
+    func ret() { self.inst("ret") }
 
-    func mov(_ dst: Reg, _ src: SystemCall) {
-        self.inst("mov", dst.rawValue, src.rawValue.description)
-    }
-
-    func mov(_ dst: Reg, _ src: Int) {
-        self.inst("mov", dst.rawValue, src.description)
-    }
-    func mov(_ dst: Reg, _ src: String) {
-        self.inst("mov", dst.rawValue, src)
-    }
-    func mov(_ dst: ArgReg, _ src: Reg) {
-        self.inst("mov", dst.rawValue, src.rawValue)
-    }
-
-    func call(_ label: String) {
-        self.raw("  call \(label)")
-    }
-
-    func syscall() {
-        self.raw("  syscall")
-    }
-
-    func push(_ value: Int) {
-        stack.depth += 8
-        self.raw("  push \(value)")
+    func mov<D: Operandable, S: Operandable>(_ dst: D, _ src: S) {
+        self.inst("mov", dst, src)
     }
 
     func push(_ reg: Reg) {
         stack.depth += 8
-        self.raw("  push \(reg.rawValue)")
+        self.inst("push", reg)
     }
 
     func pop(_ reg: Reg) {
         stack.depth -= 8
-        self.raw("  pop \(reg.rawValue)")
+        self.inst("pop", reg)
     }
 
     func add(_ reg: Reg, _ value: Int) {
-        self.inst("add", reg.rawValue, value.description)
+        self.inst("add", reg, value)
     }
+}
 
-    func ret() {
-        self.raw("  ret")
+extension X86_64Builder: BuilderOverloads {}
+
+extension CodeGenerator.Reference: Operandable {
+    func asOperand() -> String {
+        switch self {
+        case .register(let srcReg): return srcReg.asOperand()
+        case .primitive(let integer):
+            return integer.description
+        default: unimplemented()
+        }
     }
 }

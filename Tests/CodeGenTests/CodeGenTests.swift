@@ -30,17 +30,18 @@ final class CodeGenTests: XCTestCase {
             global _main
             section .text
             print_char:
-              mov r8, rdi
+              mov r10, rdi
               mov rax, 33554436
               mov rdi, 1
-              mov [rsi], r8
+              push r10
+              mov rsi, rsp
               mov rdx, 1
               syscall
+              pop rbp
               ret
             main:
               mov rdi, 65
               call print_char
-              add rsp, 8
               ret
             _main:
               call main
@@ -69,22 +70,22 @@ final class CodeGenTests: XCTestCase {
             global _main
             section .text
             print_char:
-              mov r8, rdi
+              mov r10, rdi
               mov rax, 33554436
               mov rdi, 1
-              mov [rsi], r8
+              push r10
+              mov rsi, rsp
               mov rdx, 1
               syscall
+              pop rbp
               ret
             foo:
               mov rdi, rdi
               call print_char
-              add rsp, 8
               ret
             main:
               mov rdi, 65
               call foo
-              add rsp, 8
               ret
             _main:
               call main
