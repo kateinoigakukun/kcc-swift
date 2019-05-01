@@ -4,6 +4,25 @@ import Parser
 import MirrorDiffKit
 
 final class CodeGenTests: XCTestCase {
+    var tmpDir: URL!
+    override func setUp() {
+        super.setUp()
+        let dir = URL(fileURLWithPath: #file)
+            .deletingLastPathComponent()
+            .appendingPathComponent("tmp")
+
+        tmpDir = dir
+
+        guard FileManager.default.fileExists(atPath: dir.path) else {
+            try! FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+            return
+        }
+    }
+
+    override func tearDown() {
+        super.tearDown()
+        try! FileManager.default.removeItem(at: tmpDir)
+    }
     func testCodeGen() throws {
         let content = """
         int main() {
@@ -51,7 +70,7 @@ extension CodeGenTests {
     }
 
     func executeCode(_ code: String) throws -> String {
-        let tmpExec = URL(fileURLWithPath: NSTemporaryDirectory())
+        let tmpExec = tmpDir
             .appendingPathComponent(UUID().uuidString).path
         try compile(code, output: tmpExec)
         let ps = Process()
@@ -70,7 +89,7 @@ extension CodeGenTests {
         return String(data: outputData, encoding: .utf8)!
     }
     func compile(_ code: String, output: String) throws {
-        let tmpFile = URL(fileURLWithPath: NSTemporaryDirectory())
+        let tmpFile = tmpDir
             .appendingPathComponent(UUID().uuidString)
             .appendingPathExtension("asm").path
         try code.write(toFile: tmpFile, atomically: true, encoding: .utf8)
