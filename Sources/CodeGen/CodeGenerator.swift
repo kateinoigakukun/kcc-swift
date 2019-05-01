@@ -21,17 +21,21 @@ public class CodeGenerator {
     fileprivate func gen(_ decl: ExternalDeclaration) {
         switch decl {
         case .functionDefinition(let funcDefinition):
-            switch funcDefinition.declarator.directDeclarator {
-            case .declaratorWithIdentifiers(.identifier(let name), _):
-                builder.globalLabel(name)
-                for statement in funcDefinition.compoundStatement.statement {
-                    gen(statement)
-                }
-                builder.raw("  ret")
-            default: notImplemented()
-            }
+            gen(funcDefinition)
         default:
             notImplemented()
+        }
+    }
+
+    fileprivate func gen(_ funcDefinition: FunctionDefinition) {
+        switch funcDefinition.declarator.directDeclarator {
+        case .declaratorWithIdentifiers(.identifier(let name), let arguments):
+            builder.globalLabel(name)
+            for statement in funcDefinition.compoundStatement.statement {
+                gen(statement)
+            }
+            builder.ret()
+        default: notImplemented()
         }
     }
 
@@ -89,7 +93,7 @@ public class CodeGenerator {
         builder.syscall()
         builder.mov(.rsp, .rbp)
         builder.pop(.rbp)
-        builder.raw("  ret")
+        builder.ret()
     }
 }
 

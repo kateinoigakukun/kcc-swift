@@ -89,4 +89,8 @@ class X86_64Builder {
     func add(_ reg: Reg, _ value: Int) {
         self.inst("add", reg.rawValue, value.description)
     }
+
+    func ret() {
+        self.raw("  ret")
+    }
 }
