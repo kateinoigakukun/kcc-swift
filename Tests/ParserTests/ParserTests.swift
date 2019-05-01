@@ -11,7 +11,11 @@ final class ParserTests: XCTestCase {
         case .postfix(let expr):
             switch expr {
             case let .functionCall(.primary(.identifier(id)),
-                                   .conditional(.postfix(.primary(.constant(.integer(arg)))))):
+                                arguments):
+                guard case let .unary(.postfix(.primary(.constant(.integer(arg))))) = arguments[0] else {
+                    XCTFail()
+                    return
+                }
                 XCTAssertEqual(id, "printf")
                 XCTAssertEqual(arg, 1)
             default: XCTFail()

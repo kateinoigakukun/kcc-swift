@@ -1,8 +1,21 @@
 import XCTest
 @testable import CodeGen
 import Parser
+import MirrorDiffKit
 
 final class CodeGenTests: XCTestCase {
+    func XCTAssertEqualCode(_ code: String, _ expected: String,
+                            file: StaticString = #file,
+                            line: UInt = #line) {
+        XCTAssertEqual(
+            code, expected,
+            diff(
+                between: code.split(separator: "\n").map(String.init),
+                and: expected.split(separator: "\n").map(String.init)
+            ),
+            file: file, line: line
+        )
+    }
     func testCodeGen() throws {
         let content = """
         int main() {
@@ -12,8 +25,7 @@ final class CodeGenTests: XCTestCase {
         let tokens = try lex(content)
         let unit = try parse(tokens)
         let generator = CodeGenerator()
-        XCTAssertEqual(
-            generator.generate(unit),
+        XCTAssertEqualCode(generator.generate(unit),
             """
             global _main
             section .text
@@ -44,7 +56,7 @@ final class CodeGenTests: XCTestCase {
         )
     }
 
-    func testArgument() throws {
+    func _testArgument() throws {
         let content = """
         void foo(int i) {
             print_char(i);
@@ -56,8 +68,7 @@ final class CodeGenTests: XCTestCase {
         let tokens = try lex(content)
         let unit = try parse(tokens)
         let generator = CodeGenerator()
-        XCTAssertEqual(
-            generator.generate(unit),
+        XCTAssertEqualCode(generator.generate(unit),
             """
             global _main
             section .text

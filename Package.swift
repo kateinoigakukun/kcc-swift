@@ -11,6 +11,7 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/thoughtbot/Curry.git", from: "4.0.2"),
+        .package(url: "https://github.com/Kuniwak/MirrorDiffKit.git", from: "5.0.1"),
     ],
     targets: [
         .target(
@@ -21,7 +22,7 @@ let package = Package(
             dependencies: ["CodeGen"]),
         .target(
             name: "CodeGen",
-            dependencies: ["Parser"]),
+            dependencies: ["Parser", "MirrorDiffKit"]),
         .target(
             name: "Parser",
             dependencies: ["Curry"]),

@@ -125,7 +125,7 @@ func parseExpression() -> ASTParser<Expression> {
 func parseAssignmentExpression() -> ASTParser<AssignmentExpression> {
     return choice(
         [
-            AssignmentExpression.conditional <^> parseUnaryExpression(),
+            AssignmentExpression.unary <^> parseUnaryExpression(),
             curry(AssignmentExpression.assignment)
                 <^> parseUnaryExpression()
                 <*> parseAssignmentOperator()
@@ -139,13 +139,24 @@ func parseUnaryExpression() -> ASTParser<UnaryExpression> {
 }
 
 func parsePostfixExpression() -> ASTParser<PostfixExpression> {
-    return choice([
-        curry(PostfixExpression.functionCall)
-            // TODO: Support recursive. Use parsePostFixExpression()
-            <^> parsePrimaryExpression().map(PostfixExpression.primary)
-            <*> match(.leftParen) *> parseAssignmentExpression() <* match(.rightParen),
-        PostfixExpression.primary <^> parsePrimaryExpression(),
-    ])
+    let primary = PostfixExpression.primary <^> parsePrimaryExpression()
+    let functionCall = curry(PostfixExpression.functionCall)
+        // TODO: Support recursive. Use parsePostFixExpression()
+        <^> primary
+        <*> (
+            match(.leftParen)
+                *> (
+                    (cons
+                        <^> parseAssignmentExpression()
+                        <*> many(
+                            match(.comma)
+                                *> parseAssignmentExpression()
+                        )
+                    ) <|> .pure([])
+                )
+                <* match(.rightParen)
+    )
+    return choice([functionCall, primary])
 }
 
 // TODO: Use this

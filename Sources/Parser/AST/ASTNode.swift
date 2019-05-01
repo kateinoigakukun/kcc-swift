@@ -58,38 +58,69 @@ public enum Expression {
     }
 
 
-    // TODO: Support only integer argument now
+    // TODO: Support only one integer argument now
     public var functionCall: (String, Int)? {
-        switch self {
-        case .assignment(
-            .conditional(
-                .postfix(
-                    .functionCall(
-                        .primary(.identifier(let name)),
-                        .conditional(.postfix(.primary(.constant(.integer(let arg)))))
-                    )
-                )
-            )
-            ):
-            return (name, arg)
-        default:
+        guard let (name, arguments) = self.assignment?.unary?.postfix?.functionCall else {
             return nil
+        }
+        switch name {
+        case .primary(.identifier(let funcName)):
+            // FIXME
+            guard let argument = arguments[0].unary?.postfix?.primary else {
+                return nil
+            }
+            switch argument {
+            case .constant(.integer(let value)):
+                return (funcName, value)
+            default:
+                return nil
+            }
+        default: return nil
         }
     }
 }
 
 indirect public enum AssignmentExpression {
-    case conditional(UnaryExpression) // TODO
+    case unary(UnaryExpression) // TODO
     case assignment(UnaryExpression, AssignmentOperator, AssignmentExpression)
+
+    var unary: UnaryExpression? {
+        switch self {
+        case .unary(let unary): return unary
+        default: return nil
+        }
+    }
 }
 
 public enum UnaryExpression {
     case postfix(PostfixExpression)
+
+    var postfix: PostfixExpression? {
+        switch self {
+        case .postfix(let postfix): return postfix
+        default: return nil
+        }
+    }
 }
 
 indirect public enum PostfixExpression {
     case primary(PrimaryExpression)
-    case functionCall(PostfixExpression, AssignmentExpression)
+    case functionCall(PostfixExpression, [AssignmentExpression])
+
+    var primary: PrimaryExpression? {
+        switch self {
+        case .primary(let primary):
+            return primary
+        default: return nil
+        }
+    }
+    var functionCall: (PostfixExpression, [AssignmentExpression])? {
+        switch self {
+        case .functionCall(let t0, let t1):
+            return (t0, t1)
+        default: return nil
+        }
+    }
 }
 
 public enum PrimaryExpression {
