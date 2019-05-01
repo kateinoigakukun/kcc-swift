@@ -61,15 +61,15 @@ public class Driver {
         let ps = Process()
         ps.launchPath = "/usr/local/bin/nasm"
         ps.arguments = ["-f", "macho64", file]
-        ps.waitUntilExit()
         ps.launch()
+        ps.waitUntilExit()
     }
 
     func ld(objectFile: String, output: String) {
         let ps = Process()
         ps.launchPath = "/usr/bin/ld"
         ps.arguments = ["-macosx_version_min", "10.14", "-lSystem", "-o", output, objectFile]
-        ps.waitUntilExit()
         ps.launch()
+        ps.waitUntilExit()
     }
 }

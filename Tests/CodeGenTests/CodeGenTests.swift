@@ -4,53 +4,25 @@ import Parser
 import MirrorDiffKit
 
 final class CodeGenTests: XCTestCase {
-    func XCTAssertEqualCode(_ code: String, _ expected: String,
-                            file: StaticString = #file,
-                            line: UInt = #line) {
-        XCTAssertEqual(
-            code, expected,
-            diff(
-                between: code.split(separator: "\n").map(String.init),
-                and: expected.split(separator: "\n").map(String.init)
-            ),
-            file: file, line: line
-        )
-    }
     func testCodeGen() throws {
         let content = """
         int main() {
-            print_char(65);
+            print_char(72);
+            print_char(101);
+            print_char(108);
+            print_char(108);
+            print_char(111);
+            print_char(44);
+            print_char(32);
+            print_char(119);
+            print_char(111);
+            print_char(114);
+            print_char(108);
+            print_char(100);
+            print_char(33);
         }
         """
-        let tokens = try lex(content)
-        let unit = try parse(tokens)
-        let generator = CodeGenerator()
-        XCTAssertEqualCode(generator.generate(unit),
-            """
-            global _main
-            section .text
-            print_char:
-              mov r10, rdi
-              mov rax, 33554436
-              mov rdi, 1
-              push r10
-              mov rsi, rsp
-              mov rdx, 1
-              syscall
-              pop rbp
-              ret
-            main:
-              mov rdi, 65
-              call print_char
-              ret
-            _main:
-              call main
-              mov rax, 33554433
-              mov rdi, 0
-              syscall
-
-            """
-        )
+        try XCTAssertEqual(executeSource(content), "Hello, world!")
     }
 
     func testArgument() throws {
@@ -62,38 +34,79 @@ final class CodeGenTests: XCTestCase {
             foo(65);
         }
         """
-        let tokens = try lex(content)
+        try XCTAssertEqual(executeSource(content), "A")
+    }
+}
+
+
+// MARK: - Helper
+extension CodeGenTests {
+
+    func executeSource(_ source: String) throws -> String {
+        let tokens = try lex(source)
         let unit = try parse(tokens)
         let generator = CodeGenerator()
-        XCTAssertEqualCode(generator.generate(unit),
-            """
-            global _main
-            section .text
-            print_char:
-              mov r10, rdi
-              mov rax, 33554436
-              mov rdi, 1
-              push r10
-              mov rsi, rsp
-              mov rdx, 1
-              syscall
-              pop rbp
-              ret
-            foo:
-              mov rdi, rdi
-              call print_char
-              ret
-            main:
-              mov rdi, 65
-              call foo
-              ret
-            _main:
-              call main
-              mov rax, 33554433
-              mov rdi, 0
-              syscall
+        let code = generator.generate(unit)
+        return try executeCode(code)
+    }
 
-            """
+    func executeCode(_ code: String) throws -> String {
+        let tmpExec = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent(UUID().uuidString).path
+        try compile(code, output: tmpExec)
+        let ps = Process()
+        ps.launchPath = tmpExec
+        let outputPipe = Pipe()
+        var outputData = Data()
+        let outputSource = DispatchSource.makeReadSource(
+            fileDescriptor: outputPipe.fileHandleForReading.fileDescriptor)
+        outputSource.setEventHandler {
+            outputData.append(outputPipe.fileHandleForReading.availableData)
+        }
+        outputSource.resume()
+        ps.standardOutput = outputPipe
+        ps.launch()
+        ps.waitUntilExit()
+        return String(data: outputData, encoding: .utf8)!
+    }
+    func compile(_ code: String, output: String) throws {
+        let tmpFile = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent(UUID().uuidString)
+            .appendingPathExtension("asm").path
+        try code.write(toFile: tmpFile, atomically: true, encoding: .utf8)
+        nasm(tmpFile)
+        let objectFilePath = tmpFile
+            .split(separator: ".").dropLast()
+            .joined(separator: ".") + ".o"
+        ld(objectFile: objectFilePath, output: output)
+    }
+
+    func nasm(_ file: String) {
+        let ps = Process()
+        ps.launchPath = "/usr/local/bin/nasm"
+        ps.arguments = ["-f", "macho64", file]
+        ps.launch()
+        ps.waitUntilExit()
+    }
+
+    func ld(objectFile: String, output: String) {
+        let ps = Process()
+        ps.launchPath = "/usr/bin/ld"
+        ps.arguments = ["-macosx_version_min", "10.14", "-lSystem", "-o", output, objectFile]
+        ps.launch()
+        ps.waitUntilExit()
+    }
+
+    func XCTAssertEqualCode(_ code: String, _ expected: String,
+                            file: StaticString = #file,
+                            line: UInt = #line) {
+        XCTAssertEqual(
+            code, expected,
+            diff(
+                between: code.split(separator: "\n").map(String.init),
+                and: expected.split(separator: "\n").map(String.init)
+            ),
+            file: file, line: line
         )
     }
 }
