@@ -1,8 +1,37 @@
 import Parser
 
 public class CodeGenerator {
+    enum Reference {
+        case register(Register)
+        case stack(depth: Int)
+        case primitive(Int)
+    }
+    struct Binding {
+        let type: TypeSpecifier
+        let ref: Reference
+    }
+    class Scope {
+        private var table: [String: Binding] = [:]
+        private weak var parent: Scope?
+        init() {}
+        private init(parent: Scope) {
+            self.parent = parent
+        }
+        subscript(_ identifier: String) -> Binding? {
+            get {
+                return table[identifier] ?? parent?[identifier]
+            }
+            set {
+                table[identifier] = newValue
+            }
+        }
 
+        func makeChild() -> Scope {
+            return Scope(parent: self)
+        }
+    }
     let builder: X86_64Builder = .init()
+
     public init() {}
     public func generate(_ unit: TranslationUnit) -> String {
         gen(unit)
@@ -23,7 +52,7 @@ public class CodeGenerator {
         case .functionDefinition(let funcDefinition):
             gen(funcDefinition)
         default:
-            notImplemented()
+            unimplemented()
         }
     }
 
@@ -31,27 +60,82 @@ public class CodeGenerator {
         switch funcDefinition.declarator.directDeclarator {
         case .declaratorWithIdentifiers(.identifier(let name), let arguments):
             builder.globalLabel(name)
+             // TODO: Make scope from global scope
+            var scope = Scope()
+            for (index, argument) in arguments.enumerated() {
+                guard index % 2 != 0 else { continue }
+                // TODO: support type check
+                let register = ArgReg.allCases[index/2]
+                scope[argument] = Binding(type: .int, ref: .register(register))
+            }
             for statement in funcDefinition.compoundStatement.statement {
-                gen(statement)
+                scope = gen(statement, scope: scope)
+
             }
             builder.ret()
-        default: notImplemented()
+        default: unimplemented()
         }
     }
 
-    fileprivate func gen(_ statement: Statement) {
+    fileprivate func gen(_ statement: Statement, scope: Scope) -> Scope {
         switch statement {
         case .expression(let exprStatement):
-            guard let expr = exprStatement.expression else { notImplemented() }
-            gen(expr)
+            guard let expr = exprStatement.expression else { unimplemented() }
+            return gen(expr, scope: scope)
         }
     }
 
-    fileprivate func gen(_ expr: Expression) {
-        if let (funcName, argument) = expr.functionCall {
-            builder.push(argument)
-            builder.call(funcName)
-            builder.add(.rsp, 8)
+    fileprivate func gen(_ expr: Expression, scope: Scope) -> Scope {
+        switch expr {
+        case .assignment(let assignment):
+            return gen(assignment, scope: scope).1
+        default: unimplemented()
+        }
+    }
+    fileprivate func gen(
+        _ assignment: AssignmentExpression, scope: Scope
+        ) -> (Reference, Scope) {
+        switch assignment {
+        case .unary(let unary):
+            return gen(unary, scope: scope)
+        default: unimplemented()
+        }
+    }
+
+    fileprivate func gen(_ unary: UnaryExpression, scope: Scope) -> (Reference, Scope) {
+        switch unary {
+        case .postfix(let postfix):
+            return gen(postfix, scope: scope)
+        default: unimplemented()
+        }
+    }
+
+    fileprivate func gen(_ postfix: PostfixExpression, scope: Scope) -> (Reference, Scope) {
+        switch postfix {
+        case .functionCall(let postfix, let arguments):
+            return genFunctionCall(postfix, arguments, scope: scope)
+        case .primary(.identifier(let identifier)):
+            return (scope[identifier]!.ref, scope)
+        case .primary(.constant(.integer(let integer))):
+            return (.primitive(integer), scope)
+        default: unimplemented()
+        }
+    }
+
+    fileprivate func genFunctionCall(
+        _ postfix: PostfixExpression,
+        _ arguments: [AssignmentExpression], scope: Scope) -> (Reference, Scope) {
+        switch postfix {
+        case .primary(.identifier(let identifier)):
+            let arguments = arguments.map { self.gen($0, scope: scope) }
+            for (index, (reference, _)) in arguments.enumerated() {
+                let dist = ArgReg.allCases[index]
+                builder.mov(dist, reference)
+            }
+            builder.call(identifier)
+            builder.add(.rsp, arguments.count * 8)
+            return (.register(Reg.rax), scope)
+        default: unimplemented()
         }
     }
 
@@ -83,20 +167,16 @@ public class CodeGenerator {
          ret
         */
         builder.globalLabel("print_char")
-        builder.push(.rbp)
-        builder.mov(.rbp, .rsp)
-        builder.mov(.r8, "[\(Reg.rbp) + 16]")
+        builder.mov(.r8, .rdi)
         builder.mov(.rax, .write)
         builder.mov(.rdi, 1)
         builder.raw("  mov [rsi], r8")
         builder.mov(.rdx, 1)
         builder.syscall()
-        builder.mov(.rsp, .rbp)
-        builder.pop(.rbp)
         builder.ret()
     }
 }
 
-func notImplemented() -> Never {
-    fatalError("Not implemented")
+func unimplemented() -> Never {
+    fatalError("unimplemented")
 }

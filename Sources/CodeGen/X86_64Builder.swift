@@ -1,4 +1,7 @@
-enum Reg: String {
+protocol Register {
+    var rawValue: String { get }
+}
+enum Reg: String, Register {
     case rax
     case rbp
     case rsp
@@ -6,7 +9,7 @@ enum Reg: String {
     @available(*, deprecated)
     case rdi, rdx, r8
 }
-enum ArgReg: String {
+enum ArgReg: String, Register, CaseIterable {
     case rdi, rsi, rdx, rcx, r8, r9
 }
 
@@ -48,6 +51,15 @@ class X86_64Builder {
         self.raw("\(label):")
     }
 
+    func mov(_ dst: ArgReg, _ src: CodeGenerator.Reference) {
+        switch src {
+        case .register(let srcReg):
+            self.inst("mov", dst.rawValue, srcReg.rawValue)
+        case .primitive(let integer):
+            self.inst("mov", dst.rawValue, integer.description)
+        default: unimplemented()
+        }
+    }
     func mov(_ dst: Reg, _ src: Reg) {
         self.inst("mov", dst.rawValue, src.rawValue)
     }

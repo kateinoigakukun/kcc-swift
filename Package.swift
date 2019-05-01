@@ -22,13 +22,16 @@ let package = Package(
             dependencies: ["CodeGen"]),
         .target(
             name: "CodeGen",
-            dependencies: ["Parser", "MirrorDiffKit"]),
+            dependencies: ["Parser", "Sema"]),
+        .target(
+            name: "Sema",
+            dependencies: ["Parser"]),
         .target(
             name: "Parser",
             dependencies: ["Curry"]),
         .testTarget(
             name: "CodeGenTests",
-            dependencies: ["CodeGen"]),
+            dependencies: ["CodeGen", "MirrorDiffKit"]),
         .testTarget(
             name: "ParserTests",
             dependencies: ["Parser"]),

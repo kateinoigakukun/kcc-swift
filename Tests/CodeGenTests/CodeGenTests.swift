@@ -30,19 +30,15 @@ final class CodeGenTests: XCTestCase {
             global _main
             section .text
             print_char:
-              push rbp
-              mov rbp, rsp
-              mov r8, [rbp + 16]
+              mov r8, rdi
               mov rax, 33554436
               mov rdi, 1
               mov [rsi], r8
               mov rdx, 1
               syscall
-              mov rsp, rbp
-              pop rbp
               ret
             main:
-              push 65
+              mov rdi, 65
               call print_char
               add rsp, 8
               ret
@@ -56,7 +52,7 @@ final class CodeGenTests: XCTestCase {
         )
     }
 
-    func _testArgument() throws {
+    func testArgument() throws {
         let content = """
         void foo(int i) {
             print_char(i);
@@ -73,26 +69,20 @@ final class CodeGenTests: XCTestCase {
             global _main
             section .text
             print_char:
-              push rbp
-              mov rbp, rsp
-              mov r8, [rbp + 16]
+              mov r8, rdi
               mov rax, 33554436
               mov rdi, 1
               mov [rsi], r8
               mov rdx, 1
               syscall
-              mov rsp, rbp
-              pop rbp
               ret
             foo:
-              push rbp
-              mov rbp, rsp
-              mov r8, [rbp + 16]
-              push r8
+              mov rdi, rdi
               call print_char
+              add rsp, 8
               ret
             main:
-              push 65
+              mov rdi, 65
               call foo
               add rsp, 8
               ret

@@ -11,7 +11,7 @@ final class ParserTests: XCTestCase {
         case .postfix(let expr):
             switch expr {
             case let .functionCall(.primary(.identifier(id)),
-                                arguments):
+                                   arguments):
                 guard case let .unary(.postfix(.primary(.constant(.integer(arg))))) = arguments[0] else {
                     XCTFail()
                     return
