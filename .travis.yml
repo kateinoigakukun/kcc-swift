@@ -1,4 +1,7 @@
 language: objective-c
 osx_image: xcode10.2
+install:
+  - brew update
+  - brew install nasm
 script:
   - swift test
