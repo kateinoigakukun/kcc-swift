@@ -1,6 +1,7 @@
 // For making overloads easily
 protocol BuilderOverloads {
     var code: String { get }
+    var stack: Stack { get }
 
     func section(_ section: Section)
 
@@ -23,14 +24,16 @@ protocol BuilderOverloads {
 
     func pop(_ reg: Reg)
     func push(_ reg: Reg)
+    func push(_ reg: Operandable)
+}
+
+class Stack {
+    fileprivate(set) var depth: Int = 0
 }
 
 class X86_64Builder {
     var code: String
     let stack: Stack
-    class Stack {
-        fileprivate(set) var depth: Int = 0
-    }
 
     init() {
         self.code = ""
@@ -65,6 +68,9 @@ class X86_64Builder {
     }
 
     func push(_ reg: Reg) {
+        push(reg as Operandable)
+    }
+    func push(_ reg: Operandable) {
         stack.depth += 8
         self.inst("push", reg)
     }
@@ -87,7 +93,8 @@ extension CodeGenerator.Reference: Operandable {
         case .register(let srcReg): return srcReg.asOperand()
         case .primitive(let integer):
             return integer.description
-        default: unimplemented()
+        case .stack(let depth):
+            return "[rbp - \(depth)]"
         }
     }
 }

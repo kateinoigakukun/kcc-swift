@@ -62,18 +62,26 @@ public class CodeGenerator {
             builder.label(name)
              // TODO: Make scope from global scope
             var scope = Scope()
+            var stackDepth: Int = 0
+            builder.push(.rbp)
+            builder.mov(.rbp, .rsp)
             for (index, argument) in arguments.enumerated() {
                 guard case let .identifier(id) = argument.declarator.directDeclarator else {
                     unimplemented()
                 }
                 // TODO: support type check
                 let register = ArgReg.allCases[index]
-                scope[id] = Binding(type: .int, ref: .register(register))
+                stackDepth += 8
+                let reference = Reference.stack(depth: stackDepth)
+                builder.push(register)
+                scope[id] = Binding(type: .int, ref: reference)
             }
             for statement in funcDefinition.compoundStatement.statement {
                 scope = gen(statement, scope: scope)
 
             }
+            builder.mov(.rsp, .rbp)
+            builder.pop(.rbp)
             builder.ret()
         default: unimplemented()
         }
@@ -168,6 +176,7 @@ public class CodeGenerator {
          ret
         */
         builder.label("print_char")
+        builder.push(.rbp)
         builder.mov(.r10, .rdi)
         builder.mov(.rax, .write)
         builder.mov(.rdi, 1)
@@ -175,6 +184,7 @@ public class CodeGenerator {
         builder.mov(.rsi, .rsp)
         builder.mov(.rdx, 1)
         builder.syscall()
+        builder.pop(.rbp)
         builder.pop(.rbp)
         builder.ret()
     }
