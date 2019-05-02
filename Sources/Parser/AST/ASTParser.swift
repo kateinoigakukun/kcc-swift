@@ -105,11 +105,11 @@ func parseTypeQualifier() -> ASTParser<TypeQualifier> {
 func parseInitDeclarator() -> ASTParser<InitDeclarator> {
     return curry(InitDeclarator.init)
         <^> parseDeclarator()
-        <*> orNil(parseInitializer())
+        <*> orNil(match(.assign) *> parseInitializer())
 }
 
 func parseInitializer() -> ASTParser<Initializer> {
-    return (curry(Initializer.assignment) <^> parseAssignmentExpression())
+    return (curry(Initializer.expression) <^> parseExpression())
         <|> curry(Initializer.initializerList) <^> parseInitializerList()
 }
 
@@ -321,14 +321,3 @@ func satisfyPeek(_ f: @escaping (Token) -> Bool) -> ASTParser<Void> {
         }
     }
 }
-func satisfyPeekNext(_ f: @escaping (Token) -> Bool) -> ASTParser<Void> {
-    return ASTParser { input in
-        let nextIndex = input.collection.index(after: input.startIndex)
-        if f(input.collection[nextIndex]) {
-            return ((), input)
-        } else {
-            throw SatisfyPeekError.invalid
-        }
-    }
-}
-

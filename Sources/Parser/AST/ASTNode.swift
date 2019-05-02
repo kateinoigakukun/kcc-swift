@@ -117,7 +117,7 @@ public struct InitDeclarator {
 }
 
 public enum Initializer {
-    case assignment(AssignmentExpression)
+    case expression(Expression)
     case initializerList([Initializer])
 }
 

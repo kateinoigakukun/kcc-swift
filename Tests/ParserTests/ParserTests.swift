@@ -181,6 +181,22 @@ final class ParserTests: XCTestCase {
         XCTAssertEqual(unit.externalDecls.count, 1)
     }
 
+    func testParseDecl() throws {
+        let content = """
+        void main() {
+            int value = 0;
+        }
+        """
+        let tokens = try lex(content)
+        let unit = try parse(tokens)
+        XCTAssertEqual(unit.externalDecls.count, 1)
+        switch unit.externalDecls[0] {
+        case .functionDefinition(let def):
+            XCTAssertEqual(def.compoundStatement.declaration.count, 1)
+        default: XCTFail()
+        }
+    }
+
     func testParse() throws {
         let content = """
         int main() {
