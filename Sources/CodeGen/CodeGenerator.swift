@@ -119,15 +119,19 @@ public class CodeGenerator {
             var (ref, scope) = gen(expr, scope: scope)
             let elseLabel = builder.newLabel()
             let endLabel = builder.newLabel()
-            // Compile time computing optimization
             switch ref {
             case .primitive(let value):
+                // Compile time computing optimization
                 if value != 0 {
                     scope = gen(stmt, scope: scope)
                 } else if let elseStmt = elseStmt {
                     scope = gen(elseStmt, scope: scope)
                 }
                 return scope
+            case .stack:
+                // Avoid to compare stack value directly
+                builder.mov(.r10, ref)
+                ref = .register(Reg.r10)
             default: break
             }
             builder.cmp(ref, 0)

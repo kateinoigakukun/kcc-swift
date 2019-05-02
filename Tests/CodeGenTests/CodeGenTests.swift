@@ -63,13 +63,13 @@ final class CodeGenTests: XCTestCase {
 
     func testIf() throws {
         let content = """
-        int foo() {
-            return 1;
-        }
-        int main() {
-            if (foo()) {
+        int foo(int arg) {
+            if (arg) {
                 print_char(65);
             }
+        }
+        int main() {
+            foo(1);
         }
         """
         try XCTAssertEqual(executeSource(content), "A")
