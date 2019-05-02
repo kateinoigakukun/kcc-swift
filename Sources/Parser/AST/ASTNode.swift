@@ -51,13 +51,22 @@ public struct ExpressionStatement {
     public let expression: Expression?
 }
 
-public enum Expression {
+public indirect enum Expression {
     case assignment(AssignmentExpression)
+    case additive(AdditiveExpression)
+    case unary(UnaryExpression)
 }
 
-indirect public enum AssignmentExpression {
-    case unary(UnaryExpression) // TODO
-    case assignment(UnaryExpression, AssignmentOperator, AssignmentExpression)
+public struct AssignmentExpression {
+    let lvalue: UnaryExpression
+    let `operator`: AssignmentOperator
+    let rvalue: Expression
+}
+
+public indirect enum AdditiveExpression {
+    // TODO: Use multiplicative-expr
+    case plus(Expression, Expression)
+    case minus(Expression, Expression)
 }
 
 public enum UnaryExpression {
@@ -66,7 +75,7 @@ public enum UnaryExpression {
 
 indirect public enum PostfixExpression {
     case primary(PrimaryExpression)
-    case functionCall(PostfixExpression, [AssignmentExpression])
+    case functionCall(PostfixExpression, [Expression])
 }
 
 public enum PrimaryExpression {

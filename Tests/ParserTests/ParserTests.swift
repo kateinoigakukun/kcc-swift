@@ -44,14 +44,25 @@ final class ParserTests: XCTestCase {
         XCTAssertEqual(unit.externalDecls.count, 1)
     }
 
+    func testParseAddExpr() throws {
+        let content = """
+        int foo() {
+            return 1 + 1;
+        }
+        """
+        let tokens = try lex(content)
+        let unit = try parse(tokens)
+        XCTAssertEqual(unit.externalDecls.count, 1)
+    }
+
     func testParseIfStatement() throws {
         let content = "if (1) 1;"
         let tokens = try lex(content)
         let (statement, _) = try parseSelectionStatement().parse(.root(tokens))
         switch statement {
         case .if(
-            .assignment(.unary(.postfix(
-                .primary(.constant(.integer(let value)))))),
+            .unary(.postfix(
+                .primary(.constant(.integer(let value))))),
             .expression(let expr), _):
             XCTAssertEqual(value, 1)
             XCTAssertNotNil(expr)

@@ -159,18 +159,37 @@ func parseExpressionStatement() -> ASTParser<ExpressionStatement> {
 
 func parseExpression() -> ASTParser<Expression> {
     return curry(Expression.assignment) <^> parseAssignmentExpression()
+        <|> parseAdditiveExpression()
 }
 
 func parseAssignmentExpression() -> ASTParser<AssignmentExpression> {
-    return choice(
+    return curry(AssignmentExpression.init)
+        <^> parseUnaryExpression()
+        <*> parseAssignmentOperator()
+        <*> parseExpression()
+}
+
+func debugPrint(_ msg: String) -> ASTParser<Void> {
+    return ASTParser { input in
+        print(msg)
+        return ((), input)
+    }
+}
+
+func parseAdditiveExpression(_ expr: Expression? = nil) -> ASTParser<Expression> {
+    let expr = expr.map(ASTParser.pure)
+        ?? parseUnaryExpression().map(Expression.unary)
+
+    return curry(Expression.additive) <^> choice(
         [
-            AssignmentExpression.unary <^> parseUnaryExpression(),
-            curry(AssignmentExpression.assignment)
-                <^> parseUnaryExpression()
-                <*> parseAssignmentOperator()
-                <*> parseAssignmentExpression()
+            curry(AdditiveExpression.plus)
+                <^> expr <* match(.plus)
+                <*> parseUnaryExpression().map(Expression.unary),
+            curry(AdditiveExpression.minus)
+                <^> expr <* match(.minus)
+                <*> parseUnaryExpression().map(Expression.unary),
         ]
-    )
+    ) <|> expr
 }
 
 func parseUnaryExpression() -> ASTParser<UnaryExpression> {
@@ -186,11 +205,8 @@ func parsePostfixExpression() -> ASTParser<PostfixExpression> {
             match(.leftParen)
                 *> (
                     (cons
-                        <^> parseAssignmentExpression()
-                        <*> many(
-                            match(.comma)
-                                *> parseAssignmentExpression()
-                        )
+                        <^> parseExpression()
+                        <*> many(match(.comma) *> parseExpression())
                     ) <|> .pure([])
                 )
                 <* match(.rightParen)
@@ -290,3 +306,14 @@ func satisfyPeek(_ f: @escaping (Token) -> Bool) -> ASTParser<Void> {
         }
     }
 }
+func satisfyPeekNext(_ f: @escaping (Token) -> Bool) -> ASTParser<Void> {
+    return ASTParser { input in
+        let nextIndex = input.collection.index(after: input.startIndex)
+        if f(input.collection[nextIndex]) {
+            return ((), input)
+        } else {
+            throw SatisfyPeekError.invalid
+        }
+    }
+}
+

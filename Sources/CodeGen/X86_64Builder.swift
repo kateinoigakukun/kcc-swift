@@ -35,10 +35,6 @@ protocol BuilderOverloads {
     func newLabel() -> String
 }
 
-class Stack {
-    fileprivate(set) var depth: Int = 0
-}
-
 class X86_64Builder {
     var code: String
     var labelNumber: Int
