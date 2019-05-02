@@ -170,6 +170,8 @@ public enum JumpStatement {
     case `return`(Expression?)
 }
 
-public indirect enum SelectionStatement {
-    case `if`(Expression, Statement, Statement?)
+public struct SelectionStatement {
+    public let condition: Expression
+    public let thenStatement: Statement
+    public let elseStatement: Statement?
 }

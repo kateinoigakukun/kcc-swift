@@ -146,8 +146,9 @@ func parseJumpStatement() -> ASTParser<JumpStatement> {
 }
 
 func parseSelectionStatement() -> ASTParser<SelectionStatement> {
-    return curry(SelectionStatement.if)
-        <^> match(.identifier("if")) *> match(.leftParen) *> parseExpression() <* match(.rightParen)
+    return curry(SelectionStatement.init)
+        <^> match(.identifier("if"))
+            *> match(.leftParen) *> parseExpression() <* match(.rightParen)
         <*> parseStatement()
         <*> orNil(match(.identifier("else")) *> parseStatement())
 }

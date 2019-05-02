@@ -116,39 +116,36 @@ public class CodeGenerator {
     }
 
     fileprivate func gen(_ selection: SelectionStatement, scope: Scope) -> Scope {
-        switch selection {
-        case .if(let expr, let stmt, let elseStmt):
-            var (ref, scope) = gen(expr, scope: scope)
-            let elseLabel = builder.newLabel()
-            let endLabel = builder.newLabel()
-            switch ref {
-            case .primitive(let value):
-                // Compile time computing optimization
-                if value != 0 {
-                    scope = gen(stmt, scope: scope)
-                } else if let elseStmt = elseStmt {
-                    scope = gen(elseStmt, scope: scope)
-                }
-                return scope
-            case .stack:
-                // Avoid to compare stack value directly
-                builder.mov(.r10, ref)
-                ref = .register(Reg.r10)
-            default: break
+        var (ref, scope) = gen(selection.condition, scope: scope)
+        let elseLabel = builder.newLabel()
+        let endLabel = builder.newLabel()
+        switch ref {
+        case .primitive(let value):
+            // Compile time computing optimization
+            if value != 0 {
+                scope = gen(selection.thenStatement, scope: scope)
+            } else if let elseStatement = selection.elseStatement {
+                scope = gen(elseStatement, scope: scope)
             }
-            builder.cmp(ref, 0)
-            builder.je(elseLabel)
-
-            scope = gen(stmt, scope: scope)
-            builder.jmp(endLabel)
-
-            builder.label(elseLabel)
-            if let elseStmt = elseStmt {
-                scope = gen(elseStmt, scope: scope)
-            }
-            builder.label(endLabel)
             return scope
+        case .stack:
+            // Avoid to compare stack value directly
+            builder.mov(.r10, ref)
+            ref = .register(Reg.r10)
+        default: break
         }
+        builder.cmp(ref, 0)
+        builder.je(elseLabel)
+
+        scope = gen(selection.thenStatement, scope: scope)
+        builder.jmp(endLabel)
+
+        builder.label(elseLabel)
+        if let elseStatement = selection.elseStatement {
+            scope = gen(elseStatement, scope: scope)
+        }
+        builder.label(endLabel)
+        return scope
     }
 
 
