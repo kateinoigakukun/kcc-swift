@@ -159,7 +159,9 @@ func parseExpressionStatement() -> ASTParser<ExpressionStatement> {
 
 func parseExpression() -> ASTParser<Expression> {
     return curry(Expression.assignment) <^> parseAssignmentExpression()
-        <|> parseAdditiveExpression()
+        <|> curry(Expression.unary)
+            <^> parseUnaryExpression()
+            >>- parseAdditiveExpression
 }
 
 func parseAssignmentExpression() -> ASTParser<AssignmentExpression> {
@@ -169,27 +171,37 @@ func parseAssignmentExpression() -> ASTParser<AssignmentExpression> {
         <*> parseExpression()
 }
 
-func debugPrint(_ msg: String) -> ASTParser<Void> {
-    return ASTParser { input in
-        print(msg)
-        return ((), input)
-    }
-}
-
 func parseAdditiveExpression(_ expr: Expression? = nil) -> ASTParser<Expression> {
-    let expr = expr.map(ASTParser.pure)
-        ?? parseUnaryExpression().map(Expression.unary)
-
+    let expr = parseMultiplicativeExpression(expr)
     return curry(Expression.additive) <^> choice(
         [
             curry(AdditiveExpression.plus)
                 <^> expr <* match(.plus)
-                <*> parseUnaryExpression().map(Expression.unary),
+                <*> parseAdditiveExpression(),
             curry(AdditiveExpression.minus)
                 <^> expr <* match(.minus)
-                <*> parseUnaryExpression().map(Expression.unary),
+                <*> parseAdditiveExpression(),
         ]
     ) <|> expr
+}
+
+func parseMultiplicativeExpression(_ expr: Expression? = nil) -> ASTParser<Expression> {
+    let expr = expr.map(ASTParser.pure)
+        ?? (Expression.unary <^> parseUnaryExpression())
+    return curry(Expression.multiplicative)
+        <^> choice(
+            [
+                curry(MultiplicativeExpression.multiply)
+                    <^> expr <* match(.multiply)
+                    <*> (Expression.unary <^> parseUnaryExpression()),
+                curry(MultiplicativeExpression.divide)
+                    <^> expr <* match(.divide)
+                    <*> (Expression.unary <^> parseUnaryExpression()),
+                curry(MultiplicativeExpression.modulo)
+                    <^> expr <* match(.modulo)
+                    <*> (Expression.unary <^> parseUnaryExpression()),
+            ]
+        ) <|> expr
 }
 
 func parseUnaryExpression() -> ASTParser<UnaryExpression> {

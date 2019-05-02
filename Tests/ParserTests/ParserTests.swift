@@ -44,10 +44,40 @@ final class ParserTests: XCTestCase {
         XCTAssertEqual(unit.externalDecls.count, 1)
     }
 
+    func testParseMultiPlus() throws {
+        let content = "1 + 2 + 3"
+        let tokens = try lex(content)
+        let (expr, tail) = try parseExpression().parse(.root(tokens))
+        let integer = {
+            Expression.unary(
+                .postfix(
+                    .primary(
+                        .constant(Constant.integer($0))
+                    )
+                )
+            )
+        }
+        XCTAssertEqual(
+            expr,
+            .additive(
+                .plus(
+                    integer(1),
+                    .additive(
+                        .plus(
+                            integer(2),
+                            integer(3)
+                        )
+                    )
+                )
+            )
+        )
+        XCTAssertEqual(tail.collection[tail.startIndex], .eof)
+    }
+
     func testParseAddExpr() throws {
         let content = """
         int foo() {
-            return 1 + 1;
+            return 1 + 1 + 1;
         }
         """
         let tokens = try lex(content)

@@ -17,6 +17,7 @@ public enum Token: Equatable {
     case lessThan    //<
     case multiply    //*
     case divide      // /
+    case modulo      // /
     case and         // &
     case not         // !
     case plus        // +
