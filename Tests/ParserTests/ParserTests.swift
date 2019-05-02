@@ -60,17 +60,47 @@ final class ParserTests: XCTestCase {
         XCTAssertEqual(
             expr,
             .additive(
-                .plus(
-                    integer(1),
-                    .additive(
-                        .plus(
-                            integer(2),
-                            integer(3)
-                        )
-                    )
+                .plus(.
+                    additive(
+                        .plus(integer(1), integer(2))
+                    ),
+                    integer(3)
                 )
             )
         )
+        XCTAssertEqual(tail.collection[tail.startIndex], .eof)
+    }
+
+    func testParseMultiPlusMinus() throws {
+        let content = "1 - 2 + 3 - 4"
+        let tokens = try lex(content)
+        let (expr, tail) = try parseExpression().parse(.root(tokens))
+        let integer = {
+            Expression.unary(
+                .postfix(
+                    .primary(
+                        .constant(.integer($0))
+                    )
+                )
+            )
+        }
+        XCTAssertEqual(
+            expr,
+            .additive(
+                .minus(
+                    .additive(
+                        .plus(
+                            .additive(
+                                .minus(integer(1), integer(2))
+                            ),
+                            integer(3)
+                        )
+                    ),
+                    integer(4)
+                )
+            )
+        )
+        dump(expr)
         XCTAssertEqual(tail.collection[tail.startIndex], .eof)
     }
 

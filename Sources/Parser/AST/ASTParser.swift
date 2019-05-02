@@ -159,9 +159,7 @@ func parseExpressionStatement() -> ASTParser<ExpressionStatement> {
 
 func parseExpression() -> ASTParser<Expression> {
     return curry(Expression.assignment) <^> parseAssignmentExpression()
-        <|> curry(Expression.unary)
-            <^> parseUnaryExpression()
-            >>- parseAdditiveExpression
+        <|> parseAdditiveExpression()
 }
 
 func parseAssignmentExpression() -> ASTParser<AssignmentExpression> {
@@ -171,37 +169,48 @@ func parseAssignmentExpression() -> ASTParser<AssignmentExpression> {
         <*> parseExpression()
 }
 
-func parseAdditiveExpression(_ expr: Expression? = nil) -> ASTParser<Expression> {
-    let expr = parseMultiplicativeExpression(expr)
-    return curry(Expression.additive) <^> choice(
-        [
-            curry(AdditiveExpression.plus)
-                <^> expr <* match(.plus)
-                <*> parseAdditiveExpression(),
-            curry(AdditiveExpression.minus)
-                <^> expr <* match(.minus)
-                <*> parseAdditiveExpression(),
-        ]
-    ) <|> expr
+let termfy = { (expressify: @escaping (Expression, Expression) -> Expression) in
+    return { (head: Expression, exprs: [Expression]) -> Expression in
+        exprs.reduce(head) { (result, expr) in
+            expressify(result, expr)
+        }
+    }
 }
 
-func parseMultiplicativeExpression(_ expr: Expression? = nil) -> ASTParser<Expression> {
-    let expr = expr.map(ASTParser.pure)
-        ?? (Expression.unary <^> parseUnaryExpression())
-    return curry(Expression.multiplicative)
-        <^> choice(
-            [
-                curry(MultiplicativeExpression.multiply)
-                    <^> expr <* match(.multiply)
-                    <*> (Expression.unary <^> parseUnaryExpression()),
-                curry(MultiplicativeExpression.divide)
-                    <^> expr <* match(.divide)
-                    <*> (Expression.unary <^> parseUnaryExpression()),
-                curry(MultiplicativeExpression.modulo)
-                    <^> expr <* match(.modulo)
-                    <*> (Expression.unary <^> parseUnaryExpression()),
-            ]
-        ) <|> expr
+func parseAdditiveExpression() -> ASTParser<Expression> {
+    func expressify(_ token: Token,
+                    expr1: Expression,
+                    expr2: Expression) -> Expression {
+        switch token {
+        case .plus:
+            return .additive(.plus(expr1, expr2))
+        case .minus:
+            return .additive(.minus(expr1, expr2))
+        default: fatalError()
+        }
+    }
+
+    let binaryOp = [Token.plus, .minus]
+    return curry({
+        $1.reduce($0) { expressify($1.0, expr1: $0, expr2: $1.1) }
+    })
+        <^> parseMultiplicativeExpression()
+        <*> many(
+            curry({ ($0, $1) })
+                <^> choice(binaryOp.map(match))
+                <*> parseMultiplicativeExpression()
+    )
+}
+
+func parseMultiplicativeExpression() -> ASTParser<Expression> {
+    let unary = Expression.unary <^> parseUnaryExpression()
+    let multiply = curry(termfy { .multiplicative(.multiply($0, $1)) })
+        <^> unary <*> many(match(.multiply) *> unary)
+    let divide = curry(termfy { .multiplicative(.divide($0, $1)) })
+        <^> unary <*> many(match(.divide) *> unary)
+    let modulo = curry(termfy { .multiplicative(.modulo($0, $1)) })
+        <^> unary <*> many(match(.modulo) *> unary)
+    return choice([multiply, divide, modulo])
 }
 
 func parseUnaryExpression() -> ASTParser<UnaryExpression> {

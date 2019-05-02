@@ -32,6 +32,14 @@ protocol BuilderOverloads {
     func cmp(_ value1: Int, _ value2: Int)
     func cmp(_ value1: CodeGenerator.Reference, _ value2: Int)
 
+    func add(_ dst: Reg, _ src: Reg)
+    func add(_ dst: Reg, _ src: ArgReg)
+    func add(_ dst: ArgReg, _ src: ArgReg)
+
+    func sub(_ dst: Reg, _ src: Reg)
+    func sub(_ dst: Reg, _ src: ArgReg)
+    func sub(_ dst: ArgReg, _ src: ArgReg)
+
     func newLabel() -> String
 }
 
@@ -96,6 +104,14 @@ class X86_64Builder {
 
     func cmp<V1: Operandable, V2: Operandable>(_ value1: V1, _ value2: V2) {
         self.inst("cmp", value1, value2)
+    }
+
+    func add<D: Operandable, S: Operandable>(_ dst: D, _ src: S) {
+        self.inst("add", dst, src)
+    }
+
+    func sub<D: Operandable, S: Operandable>(_ dst: D, _ src: S) {
+        self.inst("sub", dst, src)
     }
 
     func newLabel() -> String {

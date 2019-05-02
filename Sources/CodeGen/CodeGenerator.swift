@@ -46,6 +46,8 @@ public class CodeGenerator {
         builder.global("_main")
         builder.section(.text)
         genPrint_char()
+        genAdd()
+        genSub()
         for decl in unit.externalDecls {
             gen(decl)
         }
@@ -171,18 +173,35 @@ public class CodeGenerator {
         switch expr {
         case .assignment(let assignment):
             return gen(assignment, scope: scope)
-        case .additive(_):
-            unimplemented()
+        case .additive(let additive):
+            return gen(additive, scope: scope)
         case .unary(let unary):
             return gen(unary, scope: scope)
         }
     }
+
     fileprivate func gen(
         _ assignment: AssignmentExpression, scope: Scope
         ) -> (Reference, Scope) {
         unimplemented()
     }
 
+    fileprivate func gen(_ additive: AdditiveExpression, scope: Scope) -> (Reference, Scope) {
+        switch additive {
+        case let .plus( expr1, expr2):
+            return genFunctionCall(
+                .primary(.identifier("_add")),
+                [expr1, expr2],
+                scope: scope
+            )
+        case let .minus(expr1, expr2):
+            return genFunctionCall(
+                .primary(.identifier("_sub")),
+                [expr1, expr2],
+                scope: scope
+            )
+        }
+    }
     fileprivate func gen(_ unary: UnaryExpression, scope: Scope) -> (Reference, Scope) {
         switch unary {
         case .postfix(let postfix):
@@ -257,6 +276,30 @@ public class CodeGenerator {
         builder.mov(.rdx, 1)
         builder.syscall()
         builder.pop(.rbp)
+        builder.pop(.rbp)
+        builder.ret()
+    }
+
+    fileprivate func genAdd() {
+        builder.label("_add")
+        builder.push(.rbp)
+        builder.mov(.rbp, .rsp)
+        let arguments = ArgReg.allCases[0...1]
+        builder.mov(.rax, arguments[0])
+        builder.add(.rax, arguments[1])
+        builder.mov(.rsp, .rbp)
+        builder.pop(.rbp)
+        builder.ret()
+    }
+
+    fileprivate func genSub() {
+        builder.label("_sub")
+        builder.push(.rbp)
+        builder.mov(.rbp, .rsp)
+        let arguments = ArgReg.allCases[0...1]
+        builder.mov(.rax, arguments[0])
+        builder.sub(.rax, arguments[1])
+        builder.mov(.rsp, .rbp)
         builder.pop(.rbp)
         builder.ret()
     }
