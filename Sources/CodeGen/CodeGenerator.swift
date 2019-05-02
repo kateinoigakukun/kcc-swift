@@ -10,11 +10,16 @@ public class CodeGenerator {
         let type: TypeSpecifier
         let ref: Reference
     }
+    enum Context {
+        case `func`(FunctionDefinition, returnLabel: String)
+    }
     class Scope {
         private var table: [String: Binding] = [:]
         private weak var parent: Scope?
-        init() {}
-        private init(parent: Scope) {
+        let context: Context
+        init(context: Context) { self.context = context }
+        private init(context: Context, parent: Scope) {
+            self.context = context
             self.parent = parent
         }
         subscript(_ identifier: String) -> Binding? {
@@ -26,8 +31,8 @@ public class CodeGenerator {
             }
         }
 
-        func makeChild() -> Scope {
-            return Scope(parent: self)
+        func makeChild(_ context: Context) -> Scope {
+            return Scope(context: context, parent: self)
         }
     }
     let builder: BuilderOverloads = X86_64Builder.init()
@@ -61,7 +66,8 @@ public class CodeGenerator {
         case .declaratorWithIdentifiers(.identifier(let name), let arguments):
             builder.label(name)
              // TODO: Make scope from global scope
-            var scope = Scope()
+            let returnLabel = ".L\(builder.newLabelNumber())"
+            var scope = Scope(context: .func(funcDefinition, returnLabel: returnLabel))
             var stackDepth: Int = 0
             builder.push(.rbp)
             builder.mov(.rbp, .rsp)
@@ -80,6 +86,7 @@ public class CodeGenerator {
                 scope = gen(statement, scope: scope)
 
             }
+            builder.label(returnLabel)
             builder.mov(.rsp, .rbp)
             builder.pop(.rbp)
             builder.ret()
@@ -91,14 +98,33 @@ public class CodeGenerator {
         switch statement {
         case .expression(let exprStatement):
             guard let expr = exprStatement.expression else { unimplemented() }
-            return gen(expr, scope: scope)
+            return gen(expr, scope: scope).1
+        case .jump(let jumpStatement):
+            return gen(jumpStatement, scope: scope)
         }
     }
 
-    fileprivate func gen(_ expr: Expression, scope: Scope) -> Scope {
+    fileprivate func gen(_ jumpStatement: JumpStatement, scope: Scope) -> Scope {
+        switch jumpStatement {
+        case .return(let optionalExpr):
+            var scope = scope
+            guard case let .func(_, returnLabel) = scope.context else {
+                unimplemented()
+            }
+            if let expr = optionalExpr {
+                let (ref, _scope) = gen(expr, scope: scope)
+                builder.mov(.rax, ref)
+                scope = _scope
+            }
+            builder.jmp(returnLabel)
+            return scope
+        }
+    }
+
+    fileprivate func gen(_ expr: Expression, scope: Scope) -> (Reference, Scope) {
         switch expr {
         case .assignment(let assignment):
-            return gen(assignment, scope: scope).1
+            return gen(assignment, scope: scope)
         }
     }
     fileprivate func gen(

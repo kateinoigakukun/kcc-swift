@@ -23,6 +23,27 @@ final class ParserTests: XCTestCase {
         }
     }
 
+    func testParseReturnStatement() throws {
+        let content = "return 1;"
+        let tokens = try lex(content)
+        let (statement, _) = try parseJumpStatement().parse(.root(tokens))
+        switch statement {
+        case .return(let expr):
+            XCTAssertNotNil(expr)
+        }
+    }
+
+    func testParseReturnFunc() throws {
+        let content = """
+        int foo() {
+            return 1;
+        }
+        """
+        let tokens = try lex(content)
+        let unit = try parse(tokens)
+        XCTAssertEqual(unit.externalDecls.count, 1)
+    }
+
     func testMultiDeclParse() throws {
         let content = """
         void foo() {

@@ -1,7 +1,6 @@
 // For making overloads easily
 protocol BuilderOverloads {
     var code: String { get }
-    var stack: Stack { get }
 
     func section(_ section: Section)
 
@@ -20,11 +19,16 @@ protocol BuilderOverloads {
     func mov(_ dst: Reg, _ src: SystemCall)
     func mov(_ dst: ArgReg, _ src: Int)
     func mov(_ dst: Reg, _ src: Int)
+    func mov(_ dst: Reg, _ src: CodeGenerator.Reference)
     func mov(_ dst: ArgReg, _ src: CodeGenerator.Reference)
 
     func pop(_ reg: Reg)
     func push(_ reg: Reg)
     func push(_ reg: Operandable)
+
+    func jmp(_ label: String)
+
+    func newLabelNumber() -> Int
 }
 
 class Stack {
@@ -33,11 +37,11 @@ class Stack {
 
 class X86_64Builder {
     var code: String
-    let stack: Stack
+    var labelNumber: Int
 
     init() {
         self.code = ""
-        self.stack = .init()
+        self.labelNumber = 0
     }
 
     func raw(_ code: String) {
@@ -71,17 +75,24 @@ class X86_64Builder {
         push(reg as Operandable)
     }
     func push(_ reg: Operandable) {
-        stack.depth += 8
         self.inst("push", reg)
     }
 
     func pop(_ reg: Reg) {
-        stack.depth -= 8
         self.inst("pop", reg)
     }
 
     func add(_ reg: Reg, _ value: Int) {
         self.inst("add", reg, value)
+    }
+
+    func jmp(_ label: String) {
+        self.inst("jmp", label)
+    }
+
+    func newLabelNumber() -> Int {
+        defer { labelNumber += 1 }
+        return labelNumber
     }
 }
 

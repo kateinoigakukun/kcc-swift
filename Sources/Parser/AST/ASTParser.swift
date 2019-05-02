@@ -128,7 +128,17 @@ func parseCompoundStatement() -> ASTParser<CompoundStatement> {
 }
 
 func parseStatement() -> ASTParser<Statement> {
-    return curry(Statement.expression) <^> parseExpressionStatement()
+    return choice(
+        [
+            curry(Statement.expression) <^> parseExpressionStatement(),
+            curry(Statement.jump) <^> parseJumpStatement(),
+        ]
+    )
+}
+
+func parseJumpStatement() -> ASTParser<JumpStatement> {
+    return curry(JumpStatement.return)
+        <^> (match(.identifier("return")) *> orNil(parseExpression()) <* match(.semicolon))
 }
 
 func parseExpressionStatement() -> ASTParser<ExpressionStatement> {
