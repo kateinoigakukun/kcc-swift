@@ -119,15 +119,13 @@ final class ParserTests: XCTestCase {
         let content = "if (1) 1;"
         let tokens = try lex(content)
         let (statement, _) = try parseSelectionStatement().parse(.root(tokens))
-        switch statement {
-        case .if(
-            .unary(.postfix(
-                .primary(.constant(.integer(let value))))),
-            .expression(let expr), _):
-            XCTAssertEqual(value, 1)
-            XCTAssertNotNil(expr)
-        default: XCTFail()
+        guard case let .unary(
+            .postfix(.primary(
+                .constant(.integer(value))))) = statement.condition else {
+                    XCTFail()
+                    return
         }
+        XCTAssertEqual(value, 1)
     }
 
     func testParseIf() throws {

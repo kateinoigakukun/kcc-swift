@@ -86,6 +86,13 @@ public class CodeGenerator {
                 builder.push(register)
                 scope[id] = Binding(type: .int, ref: reference)
             }
+            for decl in funcDefinition.compoundStatement.declaration {
+                let (newScope, newStackDepth) = gen(
+                    decl, scope: scope, stackDepth: stackDepth
+                )
+                scope = newScope
+                stackDepth = newStackDepth
+            }
             for statement in funcDefinition.compoundStatement.statement {
                 scope = gen(statement, scope: scope)
             }
@@ -95,6 +102,33 @@ public class CodeGenerator {
             builder.ret()
         default: unimplemented()
         }
+    }
+
+    fileprivate func gen(_ decl: Declaration, scope: Scope, stackDepth: Int) -> (scope: Scope, stackDepth: Int) {
+        var scope = scope
+        var stackDepth = stackDepth
+        for initDeclarator in decl.initDeclarator {
+            switch initDeclarator.declarator.directDeclarator {
+            case .identifier(let name):
+                // TODO: Use declarationSpecifier
+                stackDepth += 8
+                let reference = Reference.stack(depth: stackDepth)
+                scope[name] = Binding(type: .int, ref: reference)
+                if let initializer = initDeclarator.initializer {
+                    switch initializer {
+                    case .expression(let expr):
+                        let (value, newScope) = gen(expr, scope: scope)
+                        builder.push(value)
+                        scope = newScope
+                    default: unimplemented()
+                    }
+                } else {
+                    builder.push(0)
+                }
+            default: unimplemented()
+            }
+        }
+        return (scope, stackDepth)
     }
 
     fileprivate func gen(_ statement: Statement, scope: Scope) -> Scope {
