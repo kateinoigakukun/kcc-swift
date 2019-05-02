@@ -66,8 +66,10 @@ public class CodeGenerator {
         case .declaratorWithIdentifiers(.identifier(let name), let arguments):
             builder.label(name)
              // TODO: Make scope from global scope
-            let returnLabel = ".L\(builder.newLabelNumber())"
-            var scope = Scope(context: .func(funcDefinition, returnLabel: returnLabel))
+            let returnLabel = builder.newLabel()
+            var scope = Scope(
+                context: .func(funcDefinition, returnLabel: returnLabel)
+            )
             var stackDepth: Int = 0
             builder.push(.rbp)
             builder.mov(.rbp, .rsp)
@@ -84,7 +86,6 @@ public class CodeGenerator {
             }
             for statement in funcDefinition.compoundStatement.statement {
                 scope = gen(statement, scope: scope)
-
             }
             builder.label(returnLabel)
             builder.mov(.rsp, .rbp)
@@ -101,8 +102,48 @@ public class CodeGenerator {
             return gen(expr, scope: scope).1
         case .jump(let jumpStatement):
             return gen(jumpStatement, scope: scope)
+        case .compound(let compoundStatement):
+            var scope = scope
+            for statement in compoundStatement.statement {
+                scope = gen(statement, scope: scope)
+            }
+            return scope
+        case .selection(let selectionStatement):
+            return gen(selectionStatement, scope: scope)
         }
     }
+
+    fileprivate func gen(_ selection: SelectionStatement, scope: Scope) -> Scope {
+        switch selection {
+        case .if(let expr, let stmt): // TODO: Support else statement
+            var (ref, scope) = gen(expr, scope: scope)
+            let elseLabel = builder.newLabel()
+            let endLabel = builder.newLabel()
+            switch ref {
+            case .primitive(let value):
+                if value != 0 {
+                    scope = gen(stmt, scope: scope)
+                } else {
+//                    // else
+//                    scope = gen(elseStmt, scope: scope)
+                }
+                return scope
+            default: break
+            }
+            builder.cmp(ref, 0)
+            builder.je(elseLabel)
+
+            scope = gen(stmt, scope: scope)
+            builder.jmp(endLabel)
+
+            builder.label(elseLabel)
+
+            // gen(elseStmt, scope: scope)
+            builder.label(endLabel)
+            return scope
+        }
+    }
+
 
     fileprivate func gen(_ jumpStatement: JumpStatement, scope: Scope) -> Scope {
         switch jumpStatement {

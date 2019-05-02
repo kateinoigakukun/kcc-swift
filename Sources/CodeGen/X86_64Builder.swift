@@ -27,8 +27,12 @@ protocol BuilderOverloads {
     func push(_ reg: Operandable)
 
     func jmp(_ label: String)
+    func je(_ label: String)
 
-    func newLabelNumber() -> Int
+    func cmp(_ value1: Int, _ value2: Int)
+    func cmp(_ value1: CodeGenerator.Reference, _ value2: Int)
+
+    func newLabel() -> String
 }
 
 class Stack {
@@ -90,9 +94,17 @@ class X86_64Builder {
         self.inst("jmp", label)
     }
 
-    func newLabelNumber() -> Int {
+    func je(_ label: String) {
+        self.inst("je", label)
+    }
+
+    func cmp<V1: Operandable, V2: Operandable>(_ value1: V1, _ value2: V2) {
+        self.inst("cmp", value1, value2)
+    }
+
+    func newLabel() -> String {
         defer { labelNumber += 1 }
-        return labelNumber
+        return ".L\(labelNumber)"
     }
 }
 
