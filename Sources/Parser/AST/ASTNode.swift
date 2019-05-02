@@ -39,10 +39,12 @@ public struct CompoundStatement {
     public let statement: [Statement]
 }
 
-public enum Statement {
+public indirect enum Statement {
 //    case labeled
+    case compound(CompoundStatement)
     case expression(ExpressionStatement)
     case jump(JumpStatement)
+    case selection(SelectionStatement)
 }
 
 public struct ExpressionStatement {
@@ -150,4 +152,8 @@ public struct ParameterDeclaration: Equatable {
 
 public enum JumpStatement {
     case `return`(Expression?)
+}
+
+public indirect enum SelectionStatement {
+    case `if`(Expression, Statement)
 }

@@ -130,15 +130,25 @@ func parseCompoundStatement() -> ASTParser<CompoundStatement> {
 func parseStatement() -> ASTParser<Statement> {
     return choice(
         [
+            curry(Statement.compound) <^> parseCompoundStatement(),
             curry(Statement.expression) <^> parseExpressionStatement(),
             curry(Statement.jump) <^> parseJumpStatement(),
+            curry(Statement.selection) <^> parseSelectionStatement(),
         ]
     )
 }
 
 func parseJumpStatement() -> ASTParser<JumpStatement> {
     return curry(JumpStatement.return)
-        <^> (match(.identifier("return")) *> orNil(parseExpression()) <* match(.semicolon))
+        <^> match(.identifier("return"))
+        *> orNil(parseExpression())
+        <* match(.semicolon)
+}
+
+func parseSelectionStatement() -> ASTParser<SelectionStatement> {
+    return curry(SelectionStatement.if)
+        <^> match(.identifier("if")) *> match(.leftParen) *> parseExpression() <* match(.rightParen)
+        <*> parseStatement()
 }
 
 func parseExpressionStatement() -> ASTParser<ExpressionStatement> {
