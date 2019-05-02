@@ -169,48 +169,42 @@ func parseAssignmentExpression() -> ASTParser<AssignmentExpression> {
         <*> parseExpression()
 }
 
-let termfy = { (expressify: @escaping (Expression, Expression) -> Expression) in
-    return { (head: Expression, exprs: [Expression]) -> Expression in
-        exprs.reduce(head) { (result, expr) in
-            expressify(result, expr)
-        }
-    }
-}
-
-func parseAdditiveExpression() -> ASTParser<Expression> {
-    func expressify(_ token: Token,
-                    expr1: Expression,
-                    expr2: Expression) -> Expression {
+func flattenBinaryExprs(_ head: Expression, exprs: [(Token, Expression)]) -> Expression {
+    return exprs.reduce(head) { expr1, pair in
+        let (token, expr2) = pair
         switch token {
         case .plus:
             return .additive(.plus(expr1, expr2))
         case .minus:
             return .additive(.minus(expr1, expr2))
+        case .multiply:
+            return .multiplicative(.multiply(expr1, expr2))
+        case .divide:
+            return .multiplicative(.divide(expr1, expr2))
+        case .modulo:
+            return .multiplicative(.modulo(expr1, expr2))
         default: fatalError()
         }
     }
+}
 
-    let binaryOp = [Token.plus, .minus]
-    return curry({
-        $1.reduce($0) { expressify($1.0, expr1: $0, expr2: $1.1) }
-    })
+func parseAdditiveExpression() -> ASTParser<Expression> {
+
+    let exprPair = curry({ ($0, $1) })
+        <^> choice([.plus, .minus].map(match))
+        <*> parseMultiplicativeExpression()
+
+    return curry(flattenBinaryExprs)
         <^> parseMultiplicativeExpression()
-        <*> many(
-            curry({ ($0, $1) })
-                <^> choice(binaryOp.map(match))
-                <*> parseMultiplicativeExpression()
-    )
+        <*> many(exprPair)
 }
 
 func parseMultiplicativeExpression() -> ASTParser<Expression> {
     let unary = Expression.unary <^> parseUnaryExpression()
-    let multiply = curry(termfy { .multiplicative(.multiply($0, $1)) })
-        <^> unary <*> many(match(.multiply) *> unary)
-    let divide = curry(termfy { .multiplicative(.divide($0, $1)) })
-        <^> unary <*> many(match(.divide) *> unary)
-    let modulo = curry(termfy { .multiplicative(.modulo($0, $1)) })
-        <^> unary <*> many(match(.modulo) *> unary)
-    return choice([multiply, divide, modulo])
+    let exprPair = curry({ ($0, $1) })
+        <^> choice([.multiply, .divide, .modulo].map(match))
+        <*> unary
+    return curry(flattenBinaryExprs) <^> unary <*> many(exprPair)
 }
 
 func parseUnaryExpression() -> ASTParser<UnaryExpression> {
