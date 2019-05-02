@@ -114,16 +114,16 @@ public class CodeGenerator {
                 stackDepth += 8
                 let reference = Reference.stack(depth: stackDepth)
                 scope[name] = Binding(type: .int, ref: reference)
-                if let initializer = initDeclarator.initializer {
-                    switch initializer {
-                    case .expression(let expr):
-                        let (value, newScope) = gen(expr, scope: scope)
-                        builder.push(value)
-                        scope = newScope
-                    default: unimplemented()
-                    }
-                } else {
-                    builder.push(0)
+                guard let initializer = initDeclarator.initializer else {
+                    builder.push(0) // Zero initialize
+                    continue
+                }
+                switch initializer {
+                case .expression(let expr):
+                    let (value, newScope) = gen(expr, scope: scope)
+                    builder.push(value)
+                    scope = newScope
+                default: unimplemented()
                 }
             default: unimplemented()
             }
