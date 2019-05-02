@@ -131,8 +131,8 @@ func parseStatement() -> ASTParser<Statement> {
     return choice(
         [
             curry(Statement.compound) <^> parseCompoundStatement(),
-            curry(Statement.expression) <^> parseExpressionStatement(),
             curry(Statement.jump) <^> parseJumpStatement(),
+            curry(Statement.expression) <^> parseExpressionStatement(),
             curry(Statement.selection) <^> parseSelectionStatement(),
         ]
     )
