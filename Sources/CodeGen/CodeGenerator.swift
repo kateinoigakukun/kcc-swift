@@ -171,16 +171,16 @@ public class CodeGenerator {
         switch expr {
         case .assignment(let assignment):
             return gen(assignment, scope: scope)
+        case .additive(_):
+            unimplemented()
+        case .unary(let unary):
+            return gen(unary, scope: scope)
         }
     }
     fileprivate func gen(
         _ assignment: AssignmentExpression, scope: Scope
         ) -> (Reference, Scope) {
-        switch assignment {
-        case .unary(let unary):
-            return gen(unary, scope: scope)
-        default: unimplemented()
-        }
+        unimplemented()
     }
 
     fileprivate func gen(_ unary: UnaryExpression, scope: Scope) -> (Reference, Scope) {
@@ -204,7 +204,7 @@ public class CodeGenerator {
 
     fileprivate func genFunctionCall(
         _ postfix: PostfixExpression,
-        _ arguments: [AssignmentExpression], scope: Scope) -> (Reference, Scope) {
+        _ arguments: [Expression], scope: Scope) -> (Reference, Scope) {
         switch postfix {
         case .primary(.identifier(let identifier)):
             let arguments = arguments.map { self.gen($0, scope: scope) }
