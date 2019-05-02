@@ -48,6 +48,19 @@ final class CodeGenTests: XCTestCase {
         try XCTAssertEqual(executeSource(content), "A")
     }
 
+    func testIfElsePrimitive() throws {
+        let content = """
+        int main() {
+            if (0) {
+                print_char(65);
+            } else {
+                print_char(66);
+            }
+        }
+        """
+        try XCTAssertEqual(executeSource(content), "B")
+    }
+
     func testIf() throws {
         let content = """
         int foo() {
@@ -60,6 +73,22 @@ final class CodeGenTests: XCTestCase {
         }
         """
         try XCTAssertEqual(executeSource(content), "A")
+    }
+
+    func testIfElse() throws {
+        let content = """
+        int foo() {
+            return 0;
+        }
+        int main() {
+            if (foo()) {
+                print_char(65);
+            } else {
+                print_char(66);
+            }
+        }
+        """
+        try XCTAssertEqual(executeSource(content), "B")
     }
 
     func testArgument() throws {

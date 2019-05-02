@@ -52,7 +52,7 @@ final class ParserTests: XCTestCase {
         case .if(
             .assignment(.unary(.postfix(
                 .primary(.constant(.integer(let value)))))),
-            .expression(let expr)):
+            .expression(let expr), _):
             XCTAssertEqual(value, 1)
             XCTAssertNotNil(expr)
         default: XCTFail()
@@ -64,6 +64,21 @@ final class ParserTests: XCTestCase {
         int foo() {
             if(1) {
                 return 1;
+            }
+        }
+        """
+        let tokens = try lex(content)
+        let unit = try parse(tokens)
+        XCTAssertEqual(unit.externalDecls.count, 1)
+    }
+
+    func testParseIfElse() throws {
+        let content = """
+        int foo() {
+            if(1) {
+                return 1;
+            } else {
+                return 2;
             }
         }
         """

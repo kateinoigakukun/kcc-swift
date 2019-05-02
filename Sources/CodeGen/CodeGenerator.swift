@@ -115,17 +115,17 @@ public class CodeGenerator {
 
     fileprivate func gen(_ selection: SelectionStatement, scope: Scope) -> Scope {
         switch selection {
-        case .if(let expr, let stmt): // TODO: Support else statement
+        case .if(let expr, let stmt, let elseStmt):
             var (ref, scope) = gen(expr, scope: scope)
             let elseLabel = builder.newLabel()
             let endLabel = builder.newLabel()
+            // Compile time computing optimization
             switch ref {
             case .primitive(let value):
                 if value != 0 {
                     scope = gen(stmt, scope: scope)
-                } else {
-//                    // else
-//                    scope = gen(elseStmt, scope: scope)
+                } else if let elseStmt = elseStmt {
+                    scope = gen(elseStmt, scope: scope)
                 }
                 return scope
             default: break
@@ -137,8 +137,9 @@ public class CodeGenerator {
             builder.jmp(endLabel)
 
             builder.label(elseLabel)
-
-            // gen(elseStmt, scope: scope)
+            if let elseStmt = elseStmt {
+                scope = gen(elseStmt, scope: scope)
+            }
             builder.label(endLabel)
             return scope
         }

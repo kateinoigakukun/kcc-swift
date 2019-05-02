@@ -155,5 +155,5 @@ public enum JumpStatement {
 }
 
 public indirect enum SelectionStatement {
-    case `if`(Expression, Statement)
+    case `if`(Expression, Statement, Statement?)
 }
