@@ -2,13 +2,15 @@ import Parser
 
 public class TypeChecker {
 
+    public init() {}
+
     func solve(_ expr: Expression, context: DeclContext) -> Type {
         switch expr {
         case .additive, .multiplicative:
             return .int
-        case .assignment(let assignment):
+        case .assignment(let assignment, _):
             return solve(assignment.rvalue, context: context)
-        case .unary(let unary):
+        case .unary(let unary, _):
             return solve(unary, context: context)
         }
     }

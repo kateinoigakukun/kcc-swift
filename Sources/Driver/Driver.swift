@@ -1,7 +1,7 @@
 import Foundation
 import Parser
 import CodeGen
-import TypeChecker
+import Sema
 
 public class Driver {
     let arguments: [String]

@@ -14,12 +14,15 @@ public struct FunctionDefinition {
     public let declarator: Declarator
     public let declaration: [Declaration]
     public let compoundStatement: CompoundStatement
+    public var inputType: Type!
+    public var outputType: Type!
 }
 
 
 public struct Declaration {
     public let declarationSpecifier: [DeclarationSpecifier]
     public let initDeclarator: [InitDeclarator]
+    public var type: Type!
 }
 
 
@@ -52,10 +55,10 @@ public struct ExpressionStatement {
 }
 
 public indirect enum Expression: Equatable {
-    case assignment(AssignmentExpression)
-    case additive(AdditiveExpression)
-    case multiplicative(MultiplicativeExpression)
-    case unary(UnaryExpression)
+    case assignment(AssignmentExpression, Type?)
+    case additive(AdditiveExpression, Type?)
+    case multiplicative(MultiplicativeExpression, Type?)
+    case unary(UnaryExpression, Type?)
 }
 
 public struct AssignmentExpression: Equatable {

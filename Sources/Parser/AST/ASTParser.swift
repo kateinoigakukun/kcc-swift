@@ -26,6 +26,8 @@ func parseFunctionDefinition() -> ASTParser<FunctionDefinition> {
         <*> parseDeclarator()
         <*> many(parseDeclaration())
         <*> parseCompoundStatement()
+        <*> .pure(nil)
+        <*> .pure(nil)
 }
 
 func parseDeclarationSpecifier() -> ASTParser<DeclarationSpecifier> {
@@ -87,6 +89,7 @@ func parseDeclaration() -> ASTParser<Declaration> {
     return curry(Declaration.init)
         <^> many1(parseDeclarationSpecifier())
         <*> (many(parseInitDeclarator()) <* match(.semicolon))
+        <*> .pure(nil)
 }
 
 
@@ -159,7 +162,7 @@ func parseExpressionStatement() -> ASTParser<ExpressionStatement> {
 }
 
 func parseExpression() -> ASTParser<Expression> {
-    return curry(Expression.assignment) <^> parseAssignmentExpression()
+    return curry(Expression.assignment) <^> parseAssignmentExpression() <*> .pure(nil)
         <|> parseAdditiveExpression()
 }
 
@@ -175,15 +178,15 @@ func flattenBinaryExprs(_ head: Expression, exprs: [(Token, Expression)]) -> Exp
         let (token, expr2) = pair
         switch token {
         case .plus:
-            return .additive(.plus(expr1, expr2))
+            return .additive(.plus(expr1, expr2), nil)
         case .minus:
-            return .additive(.minus(expr1, expr2))
+            return .additive(.minus(expr1, expr2), nil)
         case .multiply:
-            return .multiplicative(.multiply(expr1, expr2))
+            return .multiplicative(.multiply(expr1, expr2), nil)
         case .divide:
-            return .multiplicative(.divide(expr1, expr2))
+            return .multiplicative(.divide(expr1, expr2), nil)
         case .modulo:
-            return .multiplicative(.modulo(expr1, expr2))
+            return .multiplicative(.modulo(expr1, expr2), nil)
         default: fatalError()
         }
     }
@@ -201,7 +204,9 @@ func parseAdditiveExpression() -> ASTParser<Expression> {
 }
 
 func parseMultiplicativeExpression() -> ASTParser<Expression> {
-    let unary = Expression.unary <^> parseUnaryExpression()
+    let unary = curry(Expression.unary)
+        <^> parseUnaryExpression()
+        <*> .pure(nil)
     let exprPair = curry({ ($0, $1) })
         <^> choice([.multiply, .divide, .modulo].map(match))
         <*> unary

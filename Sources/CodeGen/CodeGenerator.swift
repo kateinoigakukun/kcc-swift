@@ -202,11 +202,11 @@ public class CodeGenerator {
 
     fileprivate func gen(_ expr: Expression, scope: Scope) -> (Reference, Scope) {
         switch expr {
-        case .assignment(let assignment):
+        case .assignment(let assignment, _):
             return gen(assignment, scope: scope)
-        case .additive(let additive):
+        case .additive(let additive, _):
             return gen(additive, scope: scope)
-        case .unary(let unary):
+        case .unary(let unary, _):
             return gen(unary, scope: scope)
         }
     }
