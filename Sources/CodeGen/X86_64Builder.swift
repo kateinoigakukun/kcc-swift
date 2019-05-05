@@ -13,6 +13,7 @@ protocol BuilderOverloads {
 
     func ret()
 
+    func mov(_ dst: String, _ src: Reg)
     func mov(_ dst: Reg, _ src: Reg)
     func mov(_ dst: Reg, _ src: ArgReg)
     func mov(_ dst: ArgReg, _ src: Reg)
@@ -21,6 +22,8 @@ protocol BuilderOverloads {
     func mov(_ dst: Reg, _ src: Int)
     func mov(_ dst: Reg, _ src: CodeGenerator.Reference)
     func mov(_ dst: ArgReg, _ src: CodeGenerator.Reference)
+    func mov(_ dst: CodeGenerator.Reference, _ src: CodeGenerator.Reference)
+    func mov(_ dst: CodeGenerator.Reference, _ src: String)
 
     func pop(_ reg: Reg)
     func push(_ reg: Reg)

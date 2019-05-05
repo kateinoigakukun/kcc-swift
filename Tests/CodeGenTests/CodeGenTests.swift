@@ -62,6 +62,17 @@ final class CodeGenTests: XCTestCase {
         try XCTAssertEqual(executeSource(content), "B")
     }
 
+    func testVar() throws {
+        let content = """
+        void main() {
+            int value = 65;
+            value = 66;
+            print_char(value);
+        }
+        """
+        try XCTAssertEqual(executeSource(content), "B")
+    }
+
     func testMinus() throws {
         let content = """
         int main() {

@@ -214,7 +214,14 @@ public class CodeGenerator {
     fileprivate func gen(
         _ assignment: AssignmentExpression, scope: Scope
         ) -> (Reference, Scope) {
-        unimplemented()
+        switch assignment.operator {
+        case .equal:
+            let (lRef, scope1) = gen(assignment.lvalue, scope: scope)
+            let (value, scope2) = gen(assignment.rvalue, scope: scope1)
+            // TODO: Size is fixed as Int. Change size by variable type later
+            builder.mov(lRef, "dword \(value.asOperand())")
+            return (value, scope2)
+        }
     }
 
     fileprivate func gen(_ additive: AdditiveExpression, scope: Scope) -> (Reference, Scope) {
