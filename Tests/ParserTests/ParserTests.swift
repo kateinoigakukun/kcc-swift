@@ -156,6 +156,18 @@ final class ParserTests: XCTestCase {
         XCTAssertEqual(unit.externalDecls.count, 1)
     }
 
+    func testVarParse() throws {
+        let content = """
+        int main() {
+            int value = 1;
+            value = 65;
+        }
+        """
+        let tokens = try lex(content)
+        let unit = try parse(tokens)
+        XCTAssertEqual(unit.externalDecls.count, 1)
+    }
+
     func testMultiDeclParse() throws {
         let content = """
         void foo() {

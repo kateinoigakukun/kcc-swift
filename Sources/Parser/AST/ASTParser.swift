@@ -256,7 +256,7 @@ func parseConstant() -> ASTParser<Constant> {
 }
 
 func parseAssignmentOperator() -> ASTParser<AssignmentOperator> {
-    return const(AssignmentOperator.equal) <^> match(.equal)
+    return const(AssignmentOperator.equal) <^> match(.assign)
 }
 
 enum MatchError: Error {
