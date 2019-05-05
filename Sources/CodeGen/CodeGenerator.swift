@@ -336,6 +336,6 @@ public class CodeGenerator {
     }
 }
 
-func unimplemented() -> Never {
-    fatalError("unimplemented")
+func unimplemented(file: StaticString = #file, line: UInt = #line) -> Never {
+    fatalError("unimplemented", file: file, line: line)
 }

@@ -59,9 +59,9 @@ public indirect enum Expression: Equatable {
 }
 
 public struct AssignmentExpression: Equatable {
-    let lvalue: UnaryExpression
-    let `operator`: AssignmentOperator
-    let rvalue: Expression
+    public let lvalue: UnaryExpression
+    public let `operator`: AssignmentOperator
+    public let rvalue: Expression
 }
 
 public indirect enum AdditiveExpression: Equatable {
