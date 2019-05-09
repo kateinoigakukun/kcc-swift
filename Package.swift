@@ -33,6 +33,9 @@ let package = Package(
             name: "CodeGenTests",
             dependencies: ["CodeGen", "MirrorDiffKit"]),
         .testTarget(
+            name: "SemaTests",
+            dependencies: ["Sema"]),
+        .testTarget(
             name: "ParserTests",
             dependencies: ["Parser"]),
     ]

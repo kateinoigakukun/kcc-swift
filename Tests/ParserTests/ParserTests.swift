@@ -12,7 +12,7 @@ final class ParserTests: XCTestCase {
             switch expr {
             case let .functionCall(.primary(.identifier(id)),
                                    arguments):
-                guard case let .unary(.postfix(.primary(.constant(.integer(arg))))) = arguments[0] else {
+                guard case let .unary(.postfix(.primary(.constant(.integer(arg)))), nil) = arguments[0] else {
                     XCTFail()
                     return
                 }
@@ -54,7 +54,8 @@ final class ParserTests: XCTestCase {
                     .primary(
                         .constant(Constant.integer($0))
                     )
-                )
+                ),
+                nil
             )
         }
         XCTAssertEqual(
@@ -62,10 +63,12 @@ final class ParserTests: XCTestCase {
             .additive(
                 .plus(.
                     additive(
-                        .plus(integer(1), integer(2))
+                        .plus(integer(1), integer(2)),
+                        nil
                     ),
                     integer(3)
-                )
+                ),
+                nil
             )
         )
         XCTAssertEqual(tail.collection[tail.startIndex], .eof)
@@ -81,7 +84,8 @@ final class ParserTests: XCTestCase {
                     .primary(
                         .constant(.integer($0))
                     )
-                )
+                ),
+                nil
             )
         }
         XCTAssertEqual(
@@ -91,13 +95,16 @@ final class ParserTests: XCTestCase {
                     .additive(
                         .plus(
                             .additive(
-                                .minus(integer(1), integer(2))
+                                .minus(integer(1), integer(2)),
+                                nil
                             ),
                             integer(3)
-                        )
+                        ),
+                        nil
                     ),
                     integer(4)
-                )
+                ),
+                nil
             )
         )
         dump(expr)
@@ -121,7 +128,7 @@ final class ParserTests: XCTestCase {
         let (statement, _) = try parseSelectionStatement().parse(.root(tokens))
         guard case let .unary(
             .postfix(.primary(
-                .constant(.integer(value))))) = statement.condition else {
+                .constant(.integer(value)))), _) = statement.condition else {
                     XCTFail()
                     return
         }
