@@ -1,8 +1,65 @@
 import Parser
 
+extension Array where Element == DeclarationSpecifier {
+    var type: TypeSpecifier? {
+        return lazy.compactMap { spec -> TypeSpecifier? in
+            switch spec {
+            case .typeSpecifier(let specifier):
+                return specifier
+            default: return nil
+            }
+        }.first
+    }
+}
+
 public class TypeChecker {
 
     public init() {}
+
+    func solve(_ unit: TranslationUnit) -> TranslationUnit {
+        var context: DeclContext = [:]
+        for decl in unit.externalDecls {
+        }
+        return unit
+    }
+
+    func solve(_ externalDecl: ExternalDeclaration) -> DeclContext {
+        var context: DeclContext = [:]
+        switch externalDecl {
+        case .decl(let decl):
+            context.merge(check(decl), uniquingKeysWith: { $1 })
+        case .functionDefinition(let functionDefinition):
+            context.merge(check(functionDefinition), uniquingKeysWith: { $1 })
+        }
+        return context
+    }
+
+    func check(_ functionDefinition: FunctionDefinition) -> DeclContext {
+        var context: DeclContext = [:]
+        let output = functionDefinition.declarationSpecifier.type!.asType() // TODO Throw error
+        switch functionDefinition.declarator.directDeclarator {
+        case .declaratorWithIdentifiers(.identifier(let name), let arguments):
+            let inputs = arguments.compactMap { 
+                $0.declarationSpecifier.type?.asType()
+            }
+            context[name] = .function(input: inputs, output: output)
+            default: unimplemented()
+        }
+        return context
+    }
+
+    func check(_ decl: Declaration) -> DeclContext {
+        var context: DeclContext = [:]
+        let type = decl.declarationSpecifier.type?.asType()
+        for initDecl in decl.initDeclarator {
+            switch initDecl.declarator.directDeclarator {
+            case .identifier(let id):
+                context[id] = type
+                default: unimplemented()
+            }
+        }
+        return context
+    }
 
     func solve(_ expr: Expression, context: DeclContext) -> Type {
         switch expr {

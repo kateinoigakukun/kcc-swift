@@ -108,6 +108,13 @@ public enum StorageClassSpecifier: String {
 
 public enum TypeSpecifier: String {
     case char, short, int, long, float, double, signed, unsigned, void
+
+    public func asType() -> Type {
+        switch self {
+        case .int: return .int
+        default: fatalError()
+        }
+    }
 }
 
 public enum TypeQualifier: String {
