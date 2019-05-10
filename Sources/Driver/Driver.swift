@@ -21,7 +21,6 @@ public class Driver {
             let content = try String(contentsOfFile: path)
             let tokens = try lex(content)
             let unit = try parse(tokens)
-            let typeChecker = TypeChecker()
             let code = CodeGenerator().generate(unit)
             switch subcommand {
             case "compile":

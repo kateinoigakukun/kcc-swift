@@ -11,8 +11,8 @@ final class SemaTests: XCTestCase {
         """
         let tokens = try lex(content)
         let unit = try parse(tokens)
-        let tc = TypeChecker()
-        let context = tc.solve(unit.externalDecls.first!)
+        let tc = TypeChecker(unit: unit)
+        let context = tc.makeContext(unit.externalDecls.first!)
         XCTAssertEqual(context["main"], .function(input: [.int], output: .int))
     }
 }

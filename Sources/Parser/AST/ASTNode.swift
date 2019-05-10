@@ -13,7 +13,7 @@ public struct FunctionDefinition {
     public let declarationSpecifier: [DeclarationSpecifier]
     public let declarator: Declarator
     public let declaration: [Declaration]
-    public let compoundStatement: CompoundStatement
+    public var compoundStatement: CompoundStatement
     public var inputType: Type!
     public var outputType: Type!
 }
@@ -39,7 +39,7 @@ public struct Declarator: Equatable {
 
 public struct CompoundStatement {
     public let declaration: [Declaration]
-    public let statement: [Statement]
+    public var statement: [Statement]
 }
 
 public indirect enum Statement {
@@ -51,7 +51,7 @@ public indirect enum Statement {
 }
 
 public struct ExpressionStatement {
-    public let expression: Expression?
+    public var expression: Expression?
 }
 
 public indirect enum Expression: Equatable {
@@ -59,12 +59,21 @@ public indirect enum Expression: Equatable {
     case additive(AdditiveExpression, Type?)
     case multiplicative(MultiplicativeExpression, Type?)
     case unary(UnaryExpression, Type?)
+
+    public var type: Type? {
+        switch self {
+        case .assignment(_, let type),
+            .additive(_, let type),
+            .multiplicative(_, let type),
+            .unary(_, let type): return type
+        }
+    }
 }
 
 public struct AssignmentExpression: Equatable {
     public let lvalue: UnaryExpression
     public let `operator`: AssignmentOperator
-    public let rvalue: Expression
+    public var rvalue: Expression
 }
 
 public indirect enum AdditiveExpression: Equatable {

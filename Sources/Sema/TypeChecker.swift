@@ -14,32 +14,91 @@ extension Array where Element == DeclarationSpecifier {
 
 public class TypeChecker {
 
-    public init() {}
+    var context: DeclContext = [:]
 
-    func solve(_ unit: TranslationUnit) -> TranslationUnit {
-        var context: DeclContext = [:]
-        for decl in unit.externalDecls {
-        }
-        return unit
+    public init(unit: TranslationUnit) {
+        self.context = makeContext(unit)
     }
 
-    func solve(_ externalDecl: ExternalDeclaration) -> DeclContext {
-        var context: DeclContext = [:]
+    func check(_ unit: TranslationUnit) -> TranslationUnit {
+        for decl in unit.externalDecls {
+        }
+        unimplemented()
+    }
+
+    func check(_ externalDecl: ExternalDeclaration) -> ExternalDeclaration {
         switch externalDecl {
-        case .decl(let decl):
-            context.merge(check(decl), uniquingKeysWith: { $1 })
         case .functionDefinition(let functionDefinition):
-            context.merge(check(functionDefinition), uniquingKeysWith: { $1 })
+            return .functionDefinition(check(functionDefinition))
+        case .decl: unimplemented()
+        }
+    }
+
+    func check(_ functionDefinition: FunctionDefinition) -> FunctionDefinition {
+        let previousContext = self.context
+        defer { self.context = previousContext }
+        switch functionDefinition.declarator.directDeclarator {
+        case .declaratorWithIdentifiers(_, let arguments):
+            for argument in arguments {
+                guard case let .identifier(id) = argument.declarator.directDeclarator else {
+                    unimplemented()
+                }
+                context[id] = argument.declarationSpecifier.type?.asType()
+            }
+        default: unimplemented()
+        }
+        let compound = check(functionDefinition.compoundStatement)
+        var functionDefinition = functionDefinition
+        functionDefinition.compoundStatement = compound
+        return functionDefinition
+    }
+
+    func check(_ compoundStatement: CompoundStatement) -> CompoundStatement {
+        let previousContext = self.context
+        defer { self.context = previousContext }
+        self.context = compoundStatement.declaration.reduce(into: context) {
+            $0.merge(self.makeContext($1), uniquingKeysWith: { $1 })
+        }
+        let statements = compoundStatement.statement.map { stmt -> Statement in
+            switch stmt {
+            case .expression(let exprStatement):
+                return .expression(check(exprStatement))
+            case .compound(let compoundStatement):
+                return .compound(check(compoundStatement))
+            case .jump: unimplemented()
+            case .selection: unimplemented()
+            }
+        }
+        var compound = compoundStatement
+        compound.statement = statements
+        return compound
+    }
+
+    func makeContext(_ unit: TranslationUnit) -> DeclContext {
+        var context: DeclContext = [:]
+        for decl in unit.externalDecls {
+            context.merge(makeContext(decl), uniquingKeysWith: { $1 })
         }
         return context
     }
 
-    func check(_ functionDefinition: FunctionDefinition) -> DeclContext {
+    func makeContext(_ externalDecl: ExternalDeclaration) -> DeclContext {
+        var context: DeclContext = [:]
+        switch externalDecl {
+        case .decl(let decl):
+            context.merge(makeContext(decl), uniquingKeysWith: { $1 })
+        case .functionDefinition(let functionDefinition):
+            context.merge(makeContext(functionDefinition), uniquingKeysWith: { $1 })
+        }
+        return context
+    }
+
+    func makeContext(_ functionDefinition: FunctionDefinition) -> DeclContext {
         var context: DeclContext = [:]
         let output = functionDefinition.declarationSpecifier.type!.asType() // TODO Throw error
         switch functionDefinition.declarator.directDeclarator {
         case .declaratorWithIdentifiers(.identifier(let name), let arguments):
-            let inputs = arguments.compactMap { 
+            let inputs = arguments.compactMap {
                 $0.declarationSpecifier.type?.asType()
             }
             context[name] = .function(input: inputs, output: output)
@@ -48,7 +107,7 @@ public class TypeChecker {
         return context
     }
 
-    func check(_ decl: Declaration) -> DeclContext {
+    func makeContext(_ decl: Declaration) -> DeclContext {
         var context: DeclContext = [:]
         let type = decl.declarationSpecifier.type?.asType()
         for initDecl in decl.initDeclarator {
@@ -61,38 +120,73 @@ public class TypeChecker {
         return context
     }
 
-    func solve(_ expr: Expression, context: DeclContext) -> Type {
+    func check(_ exprStatement: ExpressionStatement) -> ExpressionStatement {
+        guard let expr = exprStatement.expression else { return exprStatement }
+        var exprStatement = exprStatement
+        exprStatement.expression = check(expr)
+        return exprStatement
+    }
+
+    func check(_ expr: AdditiveExpression) -> AdditiveExpression {
         switch expr {
-        case .additive, .multiplicative:
-            return .int
-        case .assignment(let assignment, _):
-            return solve(assignment.rvalue, context: context)
-        case .unary(let unary, _):
-            return solve(unary, context: context)
+        case let .minus(expr1, expr2):
+            return .minus(check(expr1), check(expr2))
+        case let .plus(expr1, expr2):
+            return .plus(check(expr1), check(expr2))
         }
     }
 
-    func solve(_ unary: UnaryExpression, context: DeclContext) -> Type {
+    func check(_ expr: MultiplicativeExpression) -> MultiplicativeExpression {
+        switch expr {
+        case let .divide(expr1, expr2):
+            return .divide(check(expr1), check(expr2))
+        case let .multiply(expr1, expr2):
+            return .multiply(check(expr1), check(expr2))
+        case let .modulo(expr1, expr2):
+            return .modulo(check(expr1), check(expr2))
+        }
+    }
+    func check(_ expr: Expression) -> Expression {
+        switch expr {
+        case .additive(let additiveExpr, _):
+            return .additive(check(additiveExpr), .int)
+        case .multiplicative(let multiplicativeExpr, _):
+            return .multiplicative(check(multiplicativeExpr), .int)
+        case .assignment(var assignment, _):
+            switch assignment.lvalue {
+            case .postfix(.primary(.identifier(let id))):
+                let rvalue = check(assignment.rvalue)
+                context[id] = rvalue.type!
+                assignment.rvalue = rvalue
+                return .assignment(assignment, rvalue.type!)
+            default: unimplemented()
+            }
+        case .unary(let unary, _):
+            unimplemented()
+        }
+    }
+
+    func solve(_ unary: UnaryExpression) -> Type {
         switch unary {
         case .postfix(let postfix):
-            return solve(postfix, context: context)
+            return solve(postfix)
         }
     }
 
-    func solve(_ postfix: PostfixExpression, context: DeclContext) -> Type {
+    func solve(_ postfix: PostfixExpression) -> Type {
         switch postfix {
         case .functionCall(let postfixExpr, _):
-            switch solve(postfixExpr, context: context) {
+            switch solve(postfixExpr) {
             case .function(_, let output):
                 return output
             default: unimplemented() // TODO: Throw error
             }
         case .primary(let primary):
-            return solve(primary, context: context)
+            return solve(primary)
         }
     }
 
-    func solve(_ primary: PrimaryExpression, context: DeclContext) -> Type {
+    func solve(_ primary: PrimaryExpression) -> Type {
         switch primary {
         case .identifier(let id):
             return context[id]! // TODO: Throw error
