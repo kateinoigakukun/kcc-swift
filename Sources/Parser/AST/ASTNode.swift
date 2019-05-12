@@ -58,14 +58,15 @@ public indirect enum Expression: Equatable {
     case assignment(AssignmentExpression, Type?)
     case additive(AdditiveExpression, Type?)
     case multiplicative(MultiplicativeExpression, Type?)
-    case unary(UnaryExpression, Type?)
+    case unary(UnaryExpression)
 
     public var type: Type? {
         switch self {
         case .assignment(_, let type),
             .additive(_, let type),
-            .multiplicative(_, let type),
-            .unary(_, let type): return type
+            .multiplicative(_, let type):
+            return type
+        case .unary(let unary): return unary.type
         }
     }
 }
@@ -90,17 +91,38 @@ public indirect enum MultiplicativeExpression: Equatable {
 
 public enum UnaryExpression: Equatable {
     case postfix(PostfixExpression)
+    var type: Type? {
+        switch self {
+        case .postfix(let postfix):
+            return postfix.type
+        }
+    }
 }
 
 indirect public enum PostfixExpression: Equatable {
     case primary(PrimaryExpression)
     case functionCall(PostfixExpression, [Expression], Type?)
+
+    public var type: Type? {
+        switch self {
+        case .primary(let primary): return primary.type
+        case .functionCall(_, _, let type): return type
+        }
+    }
 }
 
 public enum PrimaryExpression: Equatable {
-    case identifier(String)
-    case constant(Constant)
-    case string(String)
+    case identifier(String, Type?)
+    case constant(Constant, Type?)
+    case string(String, Type?)
+    public var type: Type? {
+        switch self {
+        case .identifier(_, let type),
+             .constant(_, let type),
+             .string(_, let type):
+            return type
+        }
+    }
 }
 
 public enum Constant: Equatable {

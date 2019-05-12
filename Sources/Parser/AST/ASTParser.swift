@@ -206,7 +206,6 @@ func parseAdditiveExpression() -> ASTParser<Expression> {
 func parseMultiplicativeExpression() -> ASTParser<Expression> {
     let unary = curry(Expression.unary)
         <^> parseUnaryExpression()
-        <*> .pure(nil)
     let exprPair = curry({ ($0, $1) })
         <^> choice([.multiply, .divide, .modulo].map(match))
         <*> unary
@@ -246,11 +245,11 @@ func parseArgumentExpressionList() -> ASTParser<[AssignmentExpression]> {
 func parsePrimaryExpression() -> ASTParser<PrimaryExpression> {
     return choice(
         [
-            mapIdentifier(PrimaryExpression.identifier),
-            PrimaryExpression.constant <^> parseConstant(),
-            PrimaryExpression.string <^> string(),
+            mapIdentifier(curry(PrimaryExpression.identifier)),
+            curry(PrimaryExpression.constant) <^> parseConstant(),
+            curry(PrimaryExpression.string) <^> string(),
         ]
-    )
+    ) <*> .pure(nil)
 }
 
 func parseConstant() -> ASTParser<Constant> {

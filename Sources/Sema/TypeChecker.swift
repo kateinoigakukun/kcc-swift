@@ -163,15 +163,15 @@ public class TypeChecker {
             return .multiplicative(check(multiplicativeExpr), .int)
         case .assignment(var assignment, _):
             switch assignment.lvalue {
-            case .postfix(.primary(.identifier(let id))):
+            case .postfix(.primary(.identifier(let id, _))):
                 let rvalue = check(assignment.rvalue)
                 context[id] = rvalue.type!
                 assignment.rvalue = rvalue
                 return .assignment(assignment, rvalue.type!)
             default: unimplemented()
             }
-        case .unary(let unary, _):
-            unimplemented()
+        case .unary(let unary):
+            return .unary(check(unary))
         }
     }
 
@@ -186,26 +186,28 @@ public class TypeChecker {
         switch postfix {
         case .functionCall(let postfixExpr, let arguments, _):
             let postfix = check(postfixExpr)
-            switch check(postfixExpr) {
-            case .function(let input, let output, _):
-                for argument in arguments {
+            switch postfix.type! {
+            case .function(let input, let output):
+                let checkedArgs = arguments.map(self.check)
+                for (argument, type) in zip(checkedArgs, input)  {
+                    assert(argument.type == type)
                 }
-                return .functionCall(PostfixExpression, [Expression])
+                return .functionCall(postfix, checkedArgs, output)
             default: unimplemented() // TODO: Throw error
             }
         case .primary(let primary):
-            return solve(primary)
+            return .primary(check(primary))
         }
     }
 
-    func solve(_ primary: PrimaryExpression) -> Type {
+    func check(_ primary: PrimaryExpression) -> PrimaryExpression {
         switch primary {
-        case .identifier(let id):
-            return context[id]! // TODO: Throw error
-        case .constant(let constant):
-            return solve(constant)
-        case .string:
-            return .array(.int)
+        case .identifier(let id, _):
+            return .identifier(id, context[id]!) // TODO: Throw error
+        case .constant(let constant, _):
+            return .constant(constant, solve(constant))
+        case .string(let string, _):
+            return .string(string, .array(.int))
         }
     }
 
