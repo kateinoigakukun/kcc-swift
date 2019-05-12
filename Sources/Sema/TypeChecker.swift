@@ -15,15 +15,19 @@ extension Array where Element == DeclarationSpecifier {
 public class TypeChecker {
 
     var context: DeclContext = [:]
+    let unit: TranslationUnit
 
     public init(unit: TranslationUnit) {
+        self.unit = unit
         self.context = makeContext(unit)
     }
 
-    func check(_ unit: TranslationUnit) -> TranslationUnit {
-        for decl in unit.externalDecls {
+    func check() -> TranslationUnit {
+        var unit = self.unit
+        unit.externalDecls = unit.externalDecls.map {
+            self.check($0)
         }
-        unimplemented()
+        return unit
     }
 
     func check(_ externalDecl: ExternalDeclaration) -> ExternalDeclaration {
@@ -37,8 +41,14 @@ public class TypeChecker {
     func check(_ functionDefinition: FunctionDefinition) -> FunctionDefinition {
         let previousContext = self.context
         defer { self.context = previousContext }
+        var functionDefinition = functionDefinition
         switch functionDefinition.declarator.directDeclarator {
-        case .declaratorWithIdentifiers(_, let arguments):
+        case .declaratorWithIdentifiers(.identifier(let name), let arguments):
+            guard case let .some(.function(input, output)) = context[name] else {
+                unimplemented()
+            }
+            functionDefinition.inputType = input
+            functionDefinition.outputType = output
             for argument in arguments {
                 guard case let .identifier(id) = argument.declarator.directDeclarator else {
                     unimplemented()
@@ -48,7 +58,6 @@ public class TypeChecker {
         default: unimplemented()
         }
         let compound = check(functionDefinition.compoundStatement)
-        var functionDefinition = functionDefinition
         functionDefinition.compoundStatement = compound
         return functionDefinition
     }
@@ -166,19 +175,21 @@ public class TypeChecker {
         }
     }
 
-    func solve(_ unary: UnaryExpression) -> Type {
+    func check(_ unary: UnaryExpression) -> UnaryExpression {
         switch unary {
         case .postfix(let postfix):
-            return solve(postfix)
+            return check(postfix)
         }
     }
 
-    func solve(_ postfix: PostfixExpression) -> Type {
+    func check(_ postfix: PostfixExpression) -> PostfixExpression {
         switch postfix {
-        case .functionCall(let postfixExpr, _):
-            switch solve(postfixExpr) {
-            case .function(_, let output):
-                return output
+        case .functionCall(let postfixExpr, let arguments, _):
+            switch check(postfixExpr) {
+            case .function(let input, let output):
+                for argument in arguments {
+                }
+                return .functionCall(PostfixExpression, [Expression])
             default: unimplemented() // TODO: Throw error
             }
         case .primary(let primary):
@@ -204,6 +215,6 @@ public class TypeChecker {
     }
 }
 
-func unimplemented() -> Never {
-    fatalError("unimplemented")
+func unimplemented(file: StaticString = #file, line: UInt = #line) -> Never {
+    fatalError("unimplemented", file: file, line: line)
 }

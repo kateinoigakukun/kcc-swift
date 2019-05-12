@@ -1,5 +1,5 @@
 public struct TranslationUnit {
-    public let externalDecls: [ExternalDeclaration]
+    public var externalDecls: [ExternalDeclaration]
 }
 
 
@@ -14,7 +14,7 @@ public struct FunctionDefinition {
     public let declarator: Declarator
     public let declaration: [Declaration]
     public var compoundStatement: CompoundStatement
-    public var inputType: Type!
+    public var inputType: [Type]!
     public var outputType: Type!
 }
 
@@ -94,7 +94,7 @@ public enum UnaryExpression: Equatable {
 
 indirect public enum PostfixExpression: Equatable {
     case primary(PrimaryExpression)
-    case functionCall(PostfixExpression, [Expression])
+    case functionCall(PostfixExpression, [Expression], Type?)
 }
 
 public enum PrimaryExpression: Equatable {
