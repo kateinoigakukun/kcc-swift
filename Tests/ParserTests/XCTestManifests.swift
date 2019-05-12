@@ -6,9 +6,20 @@ extension ParserTests {
     //   `swift test --generate-linuxmain`
     // to regenerate.
     static let __allTests__ParserTests = [
+        ("testArgumentParse", testArgumentParse),
         ("testMultiDeclParse", testMultiDeclParse),
+        ("testParseAddExpr", testParseAddExpr),
         ("testParse", testParse),
+        ("testParseDecl", testParseDecl),
         ("testParseFunctionCall", testParseFunctionCall),
+        ("testParseIf", testParseIf),
+        ("testParseIfElse", testParseIfElse),
+        ("testParseIfStatement", testParseIfStatement),
+        ("testParseMultiPlus", testParseMultiPlus),
+        ("testParseMultiPlusMinus", testParseMultiPlusMinus),
+        ("testParseReturnFunc", testParseReturnFunc),
+        ("testParseReturnStatement", testParseReturnStatement),
+        ("testVarParse", testVarParse),
     ]
 }
 

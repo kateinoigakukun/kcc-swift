@@ -26,6 +26,8 @@ func parseFunctionDefinition() -> ASTParser<FunctionDefinition> {
         <*> parseDeclarator()
         <*> many(parseDeclaration())
         <*> parseCompoundStatement()
+        <*> .pure(nil)
+        <*> .pure(nil)
 }
 
 func parseDeclarationSpecifier() -> ASTParser<DeclarationSpecifier> {
@@ -56,7 +58,7 @@ func parseDirectDeclarator() -> ASTParser<DirectDeclarator> {
             match(.leftParen) *>
                 (curry(DirectDeclarator.declarator) <^> parseDeclarator())
                 <* match(.rightParen),
-            curry(DirectDeclarator.declaratorWithIdentifiers)
+            curry(DirectDeclarator.function)
                 <^> mapIdentifier(DirectDeclarator.identifier) // TODO
                 <*> (
                     match(.leftParen) *> parseParameterTypeList() <* match(.rightParen)
@@ -87,6 +89,7 @@ func parseDeclaration() -> ASTParser<Declaration> {
     return curry(Declaration.init)
         <^> many1(parseDeclarationSpecifier())
         <*> (many(parseInitDeclarator()) <* match(.semicolon))
+        <*> .pure(nil)
 }
 
 
@@ -175,15 +178,15 @@ func flattenBinaryExprs(_ head: Expression, exprs: [(Token, Expression)]) -> Exp
         let (token, expr2) = pair
         switch token {
         case .plus:
-            return .additive(.plus(expr1, expr2))
+            return .additive(.plus(expr1, expr2, nil))
         case .minus:
-            return .additive(.minus(expr1, expr2))
+            return .additive(.minus(expr1, expr2, nil))
         case .multiply:
-            return .multiplicative(.multiply(expr1, expr2))
+            return .multiplicative(.multiply(expr1, expr2, nil))
         case .divide:
-            return .multiplicative(.divide(expr1, expr2))
+            return .multiplicative(.divide(expr1, expr2, nil))
         case .modulo:
-            return .multiplicative(.modulo(expr1, expr2))
+            return .multiplicative(.modulo(expr1, expr2, nil))
         default: fatalError()
         }
     }
@@ -201,7 +204,8 @@ func parseAdditiveExpression() -> ASTParser<Expression> {
 }
 
 func parseMultiplicativeExpression() -> ASTParser<Expression> {
-    let unary = Expression.unary <^> parseUnaryExpression()
+    let unary = curry(Expression.unary)
+        <^> parseUnaryExpression()
     let exprPair = curry({ ($0, $1) })
         <^> choice([.multiply, .divide, .modulo].map(match))
         <*> unary
@@ -226,7 +230,8 @@ func parsePostfixExpression() -> ASTParser<PostfixExpression> {
                     ) <|> .pure([])
                 )
                 <* match(.rightParen)
-    )
+        )
+        <*> .pure(nil)
     return choice([functionCall, primary])
 }
 
@@ -240,11 +245,11 @@ func parseArgumentExpressionList() -> ASTParser<[AssignmentExpression]> {
 func parsePrimaryExpression() -> ASTParser<PrimaryExpression> {
     return choice(
         [
-            mapIdentifier(PrimaryExpression.identifier),
-            PrimaryExpression.constant <^> parseConstant(),
-            PrimaryExpression.string <^> string(),
+            mapIdentifier(curry(PrimaryExpression.identifier)),
+            curry(PrimaryExpression.constant) <^> parseConstant(),
+            curry(PrimaryExpression.string) <^> string(),
         ]
-    )
+    ) <*> .pure(nil)
 }
 
 func parseConstant() -> ASTParser<Constant> {

@@ -1,13 +1,16 @@
 import Foundation
 import Parser
 import CodeGen
+import Sema
 
 public class Driver {
     let arguments: [String]
     let isVerbose: Bool
+    let isExperimental: Bool
     public init(arguments: [String]) {
         self.arguments = arguments
         self.isVerbose = arguments.contains("-v")
+        self.isExperimental = arguments.contains("-X")
     }
     public func run() {
         guard arguments.count > 2 else {
@@ -19,7 +22,14 @@ public class Driver {
         do {
             let content = try String(contentsOfFile: path)
             let tokens = try lex(content)
-            let unit = try parse(tokens)
+            let parsedUnit = try parse(tokens)
+            let unit: TranslationUnit
+            if isExperimental {
+                let tc = TypeChecker(unit: parsedUnit)
+                unit = tc.check()
+            } else {
+                unit = parsedUnit
+            }
             let code = CodeGenerator().generate(unit)
             switch subcommand {
             case "compile":
