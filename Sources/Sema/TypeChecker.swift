@@ -22,7 +22,7 @@ public class TypeChecker {
         self.context = makeContext(unit)
     }
 
-    func check() -> TranslationUnit {
+    public func check() -> TranslationUnit {
         var unit = self.unit
         unit.externalDecls = unit.externalDecls.map {
             self.check($0)
