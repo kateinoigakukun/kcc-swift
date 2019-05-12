@@ -7,20 +7,21 @@ final class ParserTests: XCTestCase {
         let content = "printf(1);"
         let tokens = try lex().parse(.root(content)).0
         let (result, _) = try parseUnaryExpression().parse(.root(tokens))
-        switch result {
-        case .postfix(let expr):
-            switch expr {
-            case let .functionCall(.primary(.identifier(id)),
-                                   arguments):
-                guard case let .unary(.postfix(.primary(.constant(.integer(arg)))), nil) = arguments[0] else {
-                    XCTFail()
-                    return
-                }
-                XCTAssertEqual(id, "printf")
-                XCTAssertEqual(arg, 1)
-            default: XCTFail()
-            }
+        guard case let .postfix(expr) = result else { XCTFail(); return }
+        guard case let .functionCall(name, arguments, _) = expr else {
+            XCTFail(); return
         }
+        guard case let .primary(.identifier(id, _)) = name else {
+            XCTFail(); return
+        }
+        guard case let .unary(.postfix(argument)) = arguments[0] else {
+            XCTFail(); return
+        }
+        guard case let .primary(.constant(.integer(arg), _)) = argument else {
+            XCTFail(); return
+        }
+        XCTAssertEqual(id, "printf")
+        XCTAssertEqual(arg, 1)
     }
 
     func testParseReturnStatement() throws {
@@ -52,10 +53,9 @@ final class ParserTests: XCTestCase {
             Expression.unary(
                 .postfix(
                     .primary(
-                        .constant(Constant.integer($0))
+                        .constant(Constant.integer($0), nil)
                     )
-                ),
-                nil
+                )
             )
         }
         XCTAssertEqual(
@@ -63,12 +63,11 @@ final class ParserTests: XCTestCase {
             .additive(
                 .plus(.
                     additive(
-                        .plus(integer(1), integer(2)),
-                        nil
+                        .plus(integer(1), integer(2), nil)
                     ),
-                    integer(3)
-                ),
-                nil
+                    integer(3),
+                    nil
+                )
             )
         )
         XCTAssertEqual(tail.collection[tail.startIndex], .eof)
@@ -82,10 +81,9 @@ final class ParserTests: XCTestCase {
             Expression.unary(
                 .postfix(
                     .primary(
-                        .constant(.integer($0))
+                        .constant(.integer($0), nil)
                     )
-                ),
-                nil
+                )
             )
         }
         XCTAssertEqual(
@@ -95,16 +93,15 @@ final class ParserTests: XCTestCase {
                     .additive(
                         .plus(
                             .additive(
-                                .minus(integer(1), integer(2)),
-                                nil
+                                .minus(integer(1), integer(2), nil)
                             ),
-                            integer(3)
-                        ),
-                        nil
+                            integer(3),
+                            nil
+                        )
                     ),
-                    integer(4)
-                ),
-                nil
+                    integer(4),
+                    nil
+                )
             )
         )
         dump(expr)
@@ -126,11 +123,11 @@ final class ParserTests: XCTestCase {
         let content = "if (1) 1;"
         let tokens = try lex(content)
         let (statement, _) = try parseSelectionStatement().parse(.root(tokens))
-        guard case let .unary(
-            .postfix(.primary(
-                .constant(.integer(value)))), _) = statement.condition else {
-                    XCTFail()
-                    return
+        guard case let .unary(.postfix(postfix)) = statement.condition else {
+            XCTFail(); return
+        }
+        guard case let .primary(.constant(.integer(value), _)) = postfix else {
+            XCTFail(); return
         }
         XCTAssertEqual(value, 1)
     }
@@ -240,7 +237,10 @@ final class ParserTests: XCTestCase {
         switch decl {
         case .functionDefinition(let function):
             XCTAssertEqual(function.declarationSpecifier, [.typeSpecifier(.int)])
-            XCTAssertEqual(function.declarator.directDeclarator, .function(.identifier("main"), .default([])))
+            XCTAssertEqual(
+                function.declarator.directDeclarator,
+                .function(.identifier("main"), .default([]))
+            )
             XCTAssertEqual(function.compoundStatement.statement.count, 1)
         default: XCTFail()
         }

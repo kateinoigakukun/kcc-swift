@@ -202,11 +202,11 @@ public class CodeGenerator {
 
     fileprivate func gen(_ expr: Expression, scope: Scope) -> (Reference, Scope) {
         switch expr {
-        case .assignment(let assignment, _):
+        case .assignment(let assignment):
             return gen(assignment, scope: scope)
-        case .additive(let additive, _):
+        case .additive(let additive):
             return gen(additive, scope: scope)
-        case .unary(let unary, _):
+        case .unary(let unary):
             return gen(unary, scope: scope)
         }
     }
@@ -226,15 +226,15 @@ public class CodeGenerator {
 
     fileprivate func gen(_ additive: AdditiveExpression, scope: Scope) -> (Reference, Scope) {
         switch additive {
-        case let .plus( expr1, expr2):
+        case let .plus(expr1, expr2, _):
             return genFunctionCall(
-                .primary(.identifier("_add")),
+                .primary(.identifier("_add", nil)),
                 [expr1, expr2],
                 scope: scope
             )
-        case let .minus(expr1, expr2):
+        case let .minus(expr1, expr2, _):
             return genFunctionCall(
-                .primary(.identifier("_sub")),
+                .primary(.identifier("_sub", nil)),
                 [expr1, expr2],
                 scope: scope
             )
@@ -249,11 +249,11 @@ public class CodeGenerator {
 
     fileprivate func gen(_ postfix: PostfixExpression, scope: Scope) -> (Reference, Scope) {
         switch postfix {
-        case .functionCall(let postfix, let arguments):
+        case .functionCall(let postfix, let arguments, _):
             return genFunctionCall(postfix, arguments, scope: scope)
-        case .primary(.identifier(let identifier)):
+        case .primary(.identifier(let identifier, _)):
             return (scope[identifier]!.ref, scope)
-        case .primary(.constant(.integer(let integer))):
+        case .primary(.constant(.integer(let integer), _)):
             return (.primitive(integer), scope)
         default: unimplemented()
         }
@@ -263,7 +263,7 @@ public class CodeGenerator {
         _ postfix: PostfixExpression,
         _ arguments: [Expression], scope: Scope) -> (Reference, Scope) {
         switch postfix {
-        case .primary(.identifier(let identifier)):
+        case .primary(.identifier(let identifier, _)):
             let arguments = arguments.map { self.gen($0, scope: scope) }
             for (index, (reference, _)) in arguments.enumerated() {
                 let dist = ArgReg.allCases[index]
