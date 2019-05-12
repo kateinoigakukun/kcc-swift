@@ -43,7 +43,7 @@ public class TypeChecker {
         defer { self.context = previousContext }
         var functionDefinition = functionDefinition
         switch functionDefinition.declarator.directDeclarator {
-        case .declaratorWithIdentifiers(.identifier(let name), let arguments):
+        case .function(.identifier(let name), let arguments):
             guard case let .some(.function(input, output)) = context[name] else {
                 unimplemented()
             }
@@ -106,7 +106,7 @@ public class TypeChecker {
         var context: DeclContext = [:]
         let output = functionDefinition.declarationSpecifier.type!.asType() // TODO Throw error
         switch functionDefinition.declarator.directDeclarator {
-        case .declaratorWithIdentifiers(.identifier(let name), let arguments):
+        case .function(.identifier(let name), let arguments):
             let inputs = arguments.compactMap {
                 $0.declarationSpecifier.type?.asType()
             }
@@ -138,40 +138,45 @@ public class TypeChecker {
 
     func check(_ expr: AdditiveExpression) -> AdditiveExpression {
         switch expr {
-        case let .minus(expr1, expr2):
-            return .minus(check(expr1), check(expr2))
-        case let .plus(expr1, expr2):
-            return .plus(check(expr1), check(expr2))
+        case let .minus(expr1, expr2, _):
+            return .minus(check(expr1), check(expr2), .int)
+        case let .plus(expr1, expr2, _):
+            return .plus(check(expr1), check(expr2), .int)
         }
     }
 
     func check(_ expr: MultiplicativeExpression) -> MultiplicativeExpression {
         switch expr {
-        case let .divide(expr1, expr2):
-            return .divide(check(expr1), check(expr2))
-        case let .multiply(expr1, expr2):
-            return .multiply(check(expr1), check(expr2))
-        case let .modulo(expr1, expr2):
-            return .modulo(check(expr1), check(expr2))
+        case let .divide(expr1, expr2, _):
+            return .divide(check(expr1), check(expr2), .int)
+        case let .multiply(expr1, expr2, _):
+            return .multiply(check(expr1), check(expr2), .int)
+        case let .modulo(expr1, expr2, _):
+            return .modulo(check(expr1), check(expr2), .int)
         }
     }
     func check(_ expr: Expression) -> Expression {
         switch expr {
-        case .additive(let additiveExpr, _):
-            return .additive(check(additiveExpr), .int)
-        case .multiplicative(let multiplicativeExpr, _):
-            return .multiplicative(check(multiplicativeExpr), .int)
-        case .assignment(var assignment, _):
-            switch assignment.lvalue {
-            case .postfix(.primary(.identifier(let id, _))):
-                let rvalue = check(assignment.rvalue)
-                context[id] = rvalue.type!
-                assignment.rvalue = rvalue
-                return .assignment(assignment, rvalue.type!)
-            default: unimplemented()
-            }
+        case .additive(let additiveExpr):
+            return .additive(check(additiveExpr))
+        case .multiplicative(let multiplicativeExpr):
+            return .multiplicative(check(multiplicativeExpr))
+        case .assignment(let assignment):
+            return .assignment(check(assignment))
         case .unary(let unary):
             return .unary(check(unary))
+        }
+    }
+
+    func check(_ assignment: AssignmentExpression) -> AssignmentExpression {
+        var assignment = assignment
+        switch assignment.lvalue {
+        case .postfix(.primary(.identifier(let id, _))):
+            let rvalue = check(assignment.rvalue)
+            context[id] = rvalue.type!
+            assignment.rvalue = rvalue
+            return assignment
+        default: unimplemented()
         }
     }
 

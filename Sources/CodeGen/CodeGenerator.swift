@@ -65,7 +65,7 @@ public class CodeGenerator {
 
     fileprivate func gen(_ funcDefinition: FunctionDefinition) {
         switch funcDefinition.declarator.directDeclarator {
-        case .declaratorWithIdentifiers(.identifier(let name), let arguments):
+        case .function(.identifier(let name), let arguments):
             builder.label(name)
              // TODO: Make scope from global scope
             let returnLabel = builder.newLabel()

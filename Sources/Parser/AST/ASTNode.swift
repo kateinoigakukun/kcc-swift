@@ -14,15 +14,15 @@ public struct FunctionDefinition {
     public let declarator: Declarator
     public let declaration: [Declaration]
     public var compoundStatement: CompoundStatement
-    public var inputType: [Type]!
-    public var outputType: Type!
+    public var inputType: [Type]?
+    public var outputType: Type?
 }
 
 
 public struct Declaration {
     public let declarationSpecifier: [DeclarationSpecifier]
     public let initDeclarator: [InitDeclarator]
-    public var type: Type!
+    public var type: Type?
 }
 
 
@@ -55,18 +55,21 @@ public struct ExpressionStatement {
 }
 
 public indirect enum Expression: Equatable {
-    case assignment(AssignmentExpression, Type?)
-    case additive(AdditiveExpression, Type?)
-    case multiplicative(MultiplicativeExpression, Type?)
+    case assignment(AssignmentExpression)
+    case additive(AdditiveExpression)
+    case multiplicative(MultiplicativeExpression)
     case unary(UnaryExpression)
 
     public var type: Type? {
         switch self {
-        case .assignment(_, let type),
-            .additive(_, let type),
-            .multiplicative(_, let type):
-            return type
-        case .unary(let unary): return unary.type
+        case .additive(let additive):
+            return additive.type
+        case .multiplicative(let multiplicative):
+            return multiplicative.type
+        case .assignment(let assignment):
+            return assignment.type
+        case .unary(let unary):
+            return unary.type
         }
     }
 }
@@ -75,18 +78,39 @@ public struct AssignmentExpression: Equatable {
     public let lvalue: UnaryExpression
     public let `operator`: AssignmentOperator
     public var rvalue: Expression
+
+    var type: Type? {
+        return rvalue.type
+    }
 }
 
 public indirect enum AdditiveExpression: Equatable {
     // TODO: Use multiplicative-expr
-    case plus(Expression, Expression)
-    case minus(Expression, Expression)
+    case plus(Expression, Expression, Type?)
+    case minus(Expression, Expression, Type?)
+
+    var type: Type? {
+        switch self {
+        case .plus(_, _, let type),
+             .minus(_, _, let type):
+            return type
+        }
+    }
 }
 
 public indirect enum MultiplicativeExpression: Equatable {
-    case multiply(Expression, Expression)
-    case divide(Expression, Expression)
-    case modulo(Expression, Expression)
+    case multiply(Expression, Expression, Type?)
+    case divide(Expression, Expression, Type?)
+    case modulo(Expression, Expression, Type?)
+
+    var type: Type? {
+        switch self {
+        case .multiply(_, _, let type),
+             .divide(_, _, let type),
+             .modulo(_, _, let type):
+            return type
+        }
+    }
 }
 
 public enum UnaryExpression: Equatable {
@@ -182,7 +206,7 @@ extension Box: Equatable where T: Equatable {
 
 indirect public enum DirectDeclarator: Equatable {
     case declarator(Declarator)
-    case declaratorWithIdentifiers(DirectDeclarator, ParameterTypeList)
+    case function(DirectDeclarator, ParameterTypeList)
     case identifier(String)
     // TODO
 }

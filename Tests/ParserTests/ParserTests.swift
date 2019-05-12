@@ -240,7 +240,7 @@ final class ParserTests: XCTestCase {
         switch decl {
         case .functionDefinition(let function):
             XCTAssertEqual(function.declarationSpecifier, [.typeSpecifier(.int)])
-            XCTAssertEqual(function.declarator.directDeclarator, .declaratorWithIdentifiers(.identifier("main"), .default([])))
+            XCTAssertEqual(function.declarator.directDeclarator, .function(.identifier("main"), .default([])))
             XCTAssertEqual(function.compoundStatement.statement.count, 1)
         default: XCTFail()
         }

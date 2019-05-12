@@ -58,7 +58,7 @@ func parseDirectDeclarator() -> ASTParser<DirectDeclarator> {
             match(.leftParen) *>
                 (curry(DirectDeclarator.declarator) <^> parseDeclarator())
                 <* match(.rightParen),
-            curry(DirectDeclarator.declaratorWithIdentifiers)
+            curry(DirectDeclarator.function)
                 <^> mapIdentifier(DirectDeclarator.identifier) // TODO
                 <*> (
                     match(.leftParen) *> parseParameterTypeList() <* match(.rightParen)
@@ -162,7 +162,7 @@ func parseExpressionStatement() -> ASTParser<ExpressionStatement> {
 }
 
 func parseExpression() -> ASTParser<Expression> {
-    return curry(Expression.assignment) <^> parseAssignmentExpression() <*> .pure(nil)
+    return curry(Expression.assignment) <^> parseAssignmentExpression()
         <|> parseAdditiveExpression()
 }
 
@@ -178,15 +178,15 @@ func flattenBinaryExprs(_ head: Expression, exprs: [(Token, Expression)]) -> Exp
         let (token, expr2) = pair
         switch token {
         case .plus:
-            return .additive(.plus(expr1, expr2), nil)
+            return .additive(.plus(expr1, expr2, nil))
         case .minus:
-            return .additive(.minus(expr1, expr2), nil)
+            return .additive(.minus(expr1, expr2, nil))
         case .multiply:
-            return .multiplicative(.multiply(expr1, expr2), nil)
+            return .multiplicative(.multiply(expr1, expr2, nil))
         case .divide:
-            return .multiplicative(.divide(expr1, expr2), nil)
+            return .multiplicative(.divide(expr1, expr2, nil))
         case .modulo:
-            return .multiplicative(.modulo(expr1, expr2), nil)
+            return .multiplicative(.modulo(expr1, expr2, nil))
         default: fatalError()
         }
     }
