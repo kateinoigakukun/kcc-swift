@@ -1,27 +1,27 @@
-public struct TranslationUnit {
-    public var externalDecls: [ExternalDeclaration]
+public struct TranslationUnit<Phase> {
+    public var externalDecls: [ExternalDeclaration<Phase>]
 }
 
 
-public enum ExternalDeclaration {
-    case functionDefinition(FunctionDefinition)
-    case decl(Declaration)
+public enum ExternalDeclaration<Phase> {
+    case functionDefinition(FunctionDefinition<Phase>)
+    case decl(Declaration<Phase>)
 }
 
 
-public struct FunctionDefinition {
+public struct FunctionDefinition<Phase> {
     public let declarationSpecifier: [DeclarationSpecifier]
     public let declarator: Declarator
-    public let declaration: [Declaration]
-    public var compoundStatement: CompoundStatement
+    public let declaration: [Declaration<Phase>]
+    public var compoundStatement: CompoundStatement<Phase>
     public var inputType: [Type]!
     public var outputType: Type!
 }
 
 
-public struct Declaration {
+public struct Declaration<Phase> {
     public let declarationSpecifier: [DeclarationSpecifier]
-    public let initDeclarator: [InitDeclarator]
+    public let initDeclarator: [InitDeclarator<Phase>]
     public var type: Type!
 }
 
@@ -37,28 +37,28 @@ public struct Declarator: Equatable {
     public let directDeclarator: DirectDeclarator
 }
 
-public struct CompoundStatement {
-    public let declaration: [Declaration]
-    public var statement: [Statement]
+public struct CompoundStatement<Phase> {
+    public let declaration: [Declaration<Phase>]
+    public var statement: [Statement<Phase>]
 }
 
-public indirect enum Statement {
+public indirect enum Statement<Phase> {
 //    case labeled
-    case compound(CompoundStatement)
-    case expression(ExpressionStatement)
-    case jump(JumpStatement)
-    case selection(SelectionStatement)
+    case compound(CompoundStatement<Phase>)
+    case expression(ExpressionStatement<Phase>)
+    case jump(JumpStatement<Phase>)
+    case selection(SelectionStatement<Phase>)
 }
 
-public struct ExpressionStatement {
-    public var expression: Expression?
+public struct ExpressionStatement<Phase> {
+    public var expression: Expression<Phase>?
 }
 
-public indirect enum Expression: Equatable {
-    case assignment(AssignmentExpression, Type?)
-    case additive(AdditiveExpression, Type?)
-    case multiplicative(MultiplicativeExpression, Type?)
-    case unary(UnaryExpression, Type?)
+public indirect enum Expression<Phase>: Equatable {
+    case assignment(AssignmentExpression<Phase>, Type?)
+    case additive(AdditiveExpression<Phase>, Type?)
+    case multiplicative(MultiplicativeExpression<Phase>, Type?)
+    case unary(UnaryExpression<Phase>, Type?)
 
     public var type: Type? {
         switch self {
@@ -70,40 +70,40 @@ public indirect enum Expression: Equatable {
     }
 }
 
-public struct AssignmentExpression: Equatable {
-    public let lvalue: UnaryExpression
+public struct AssignmentExpression<Phase>: Equatable {
+    public let lvalue: UnaryExpression<Phase>
     public let `operator`: AssignmentOperator
-    public var rvalue: Expression
+    public var rvalue: Expression<Phase>
 }
 
-public indirect enum AdditiveExpression: Equatable {
+public indirect enum AdditiveExpression<Phase>: Equatable {
     // TODO: Use multiplicative-expr
-    case plus(Expression, Expression)
-    case minus(Expression, Expression)
+    case plus(Expression<Phase>, Expression<Phase>)
+    case minus(Expression<Phase>, Expression<Phase>)
 }
 
-public indirect enum MultiplicativeExpression: Equatable {
-    case multiply(Expression, Expression)
-    case divide(Expression, Expression)
-    case modulo(Expression, Expression)
+public indirect enum MultiplicativeExpression<Phase>: Equatable {
+    case multiply(Expression<Phase>, Expression<Phase>)
+    case divide(Expression<Phase>, Expression<Phase>)
+    case modulo(Expression<Phase>, Expression<Phase>)
 }
 
-public enum UnaryExpression: Equatable {
-    case postfix(PostfixExpression)
+public enum UnaryExpression<Phase>: Equatable {
+    case postfix(PostfixExpression<Phase>)
 }
 
-indirect public enum PostfixExpression: Equatable {
-    case primary(PrimaryExpression)
-    case functionCall(PostfixExpression, [Expression], Type?)
+indirect public enum PostfixExpression<Phase>: Equatable {
+    case primary(PrimaryExpression<Phase>)
+    case functionCall(PostfixExpression<Phase>, [Expression<Phase>], Type?)
 }
 
-public enum PrimaryExpression: Equatable {
+public enum PrimaryExpression<Phase>: Equatable {
     case identifier(String)
-    case constant(Constant)
+    case constant(Constant<Phase>)
     case string(String)
 }
 
-public enum Constant: Equatable {
+public enum Constant<Phase>: Equatable {
     case integer(Int)
 }
 
@@ -130,14 +130,14 @@ public enum TypeQualifier: String {
     case const, volatile
 }
 
-public struct InitDeclarator {
+public struct InitDeclarator<Phase> {
     public let declarator: Declarator
-    public let initializer: Initializer?
+    public let initializer: Initializer<Phase>?
 }
 
-public enum Initializer {
-    case expression(Expression)
-    case initializerList([Initializer])
+public enum Initializer<Phase> {
+    case expression(Expression<Phase>)
+    case initializerList([Initializer<Phase>])
 }
 
 public struct Pointer: Equatable {
@@ -185,12 +185,12 @@ public struct ParameterDeclaration: Equatable {
     public let declarator: Declarator
 }
 
-public enum JumpStatement {
-    case `return`(Expression?)
+public enum JumpStatement<Phase> {
+    case `return`(Expression<Phase>?)
 }
 
-public struct SelectionStatement {
-    public let condition: Expression
-    public let thenStatement: Statement
-    public let elseStatement: Statement?
+public struct SelectionStatement<Phase> {
+    public let condition: Expression<Phase>
+    public let thenStatement: Statement<Phase>
+    public let elseStatement: Statement<Phase>?
 }
