@@ -178,15 +178,16 @@ public class TypeChecker {
     func check(_ unary: UnaryExpression) -> UnaryExpression {
         switch unary {
         case .postfix(let postfix):
-            return check(postfix)
+            return .postfix(check(postfix))
         }
     }
 
     func check(_ postfix: PostfixExpression) -> PostfixExpression {
         switch postfix {
         case .functionCall(let postfixExpr, let arguments, _):
+            let postfix = check(postfixExpr)
             switch check(postfixExpr) {
-            case .function(let input, let output):
+            case .function(let input, let output, _):
                 for argument in arguments {
                 }
                 return .functionCall(PostfixExpression, [Expression])

@@ -231,7 +231,8 @@ func parsePostfixExpression() -> ASTParser<PostfixExpression> {
                     ) <|> .pure([])
                 )
                 <* match(.rightParen)
-    )
+        )
+        <*> .pure(nil)
     return choice([functionCall, primary])
 }
 
