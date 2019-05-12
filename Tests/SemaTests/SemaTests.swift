@@ -17,9 +17,28 @@ final class SemaTests: XCTestCase {
         XCTAssertEqual(tc.context["main"], .function(input: [.int], output: .int))
         let checked = tc.check()
         switch checked.externalDecls[0] {
-        case .functionDefinition(let def): break
+        case .functionDefinition(let def):
+            XCTAssertEqual(def.inputType, [.int])
+            XCTAssertEqual(def.outputType, .int)
         default: XCTFail()
         }
-        dump(checked)
+        guard case .functionDefinition(let def) = checked.externalDecls[1] else {
+            XCTFail()
+            return
+        }
+        let stmt = def.compoundStatement.statement[0]
+        guard case .expression(let expr) = stmt else {
+            XCTFail()
+            return
+        }
+        guard case .some(
+            .unary(.postfix(.functionCall(
+                let name, let args, let type)))) = expr.expression else {
+                    XCTFail()
+                    return
+        }
+        XCTAssertEqual(name.type, .function(input: [.int], output: .int))
+        XCTAssertEqual(args.map { $0.type }, [.int])
+        XCTAssertEqual(type, .int)
     }
 }
