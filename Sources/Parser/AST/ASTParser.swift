@@ -5,22 +5,22 @@ enum ASTPhase: ParserPhase {
 }
 typealias ASTParser<T> = Parser<ASTPhase, T>
 
-public func parse(_ tokens: [Token]) throws -> TranslationUnit<Parsing> {
+public func parse(_ tokens: [Token]) throws -> TranslationUnit {
     return try parseTranslationUnit().parse(.root(tokens)).0
 }
 
-func parseTranslationUnit() -> ASTParser<TranslationUnit<Parsing>> {
+func parseTranslationUnit() -> ASTParser<TranslationUnit> {
     return TranslationUnit.init <^> many(parseExternalDeclaration())
 }
 
-func parseExternalDeclaration() -> ASTParser<ExternalDeclaration<Parsing>> {
+func parseExternalDeclaration() -> ASTParser<ExternalDeclaration> {
     return
         (ExternalDeclaration.functionDefinition <^> parseFunctionDefinition())
             <|> (ExternalDeclaration.decl <^> parseDeclaration())
 }
 
 /// <function-definition> ::= {<declaration-specifier>}* <declarator> {<declaration>}* <compound-statement>
-func parseFunctionDefinition() -> ASTParser<FunctionDefinition<Parsing>> {
+func parseFunctionDefinition() -> ASTParser<FunctionDefinition> {
     return curry(FunctionDefinition.init)
         <^> many(parseDeclarationSpecifier())
         <*> parseDeclarator()
@@ -85,7 +85,7 @@ func parseParameterDeclaration() -> ASTParser<ParameterDeclaration> {
         <*> parseDeclarator()
 }
 
-func parseDeclaration() -> ASTParser<Declaration<Parsing>> {
+func parseDeclaration() -> ASTParser<Declaration> {
     return curry(Declaration.init)
         <^> many1(parseDeclarationSpecifier())
         <*> (many(parseInitDeclarator()) <* match(.semicolon))
@@ -105,24 +105,24 @@ func parseTypeQualifier() -> ASTParser<TypeQualifier> {
     return mapIdentifier(TypeQualifier.init)
 }
 
-func parseInitDeclarator() -> ASTParser<InitDeclarator<Parsing>> {
+func parseInitDeclarator() -> ASTParser<InitDeclarator> {
     return curry(InitDeclarator.init)
         <^> parseDeclarator()
         <*> orNil(match(.assign) *> parseInitializer())
 }
 
-func parseInitializer() -> ASTParser<Initializer<Parsing>> {
+func parseInitializer() -> ASTParser<Initializer> {
     return (curry(Initializer.expression) <^> parseExpression())
         <|> curry(Initializer.initializerList) <^> parseInitializerList()
 }
 
-func parseInitializerList() -> ASTParser<[Initializer<Parsing>]> {
+func parseInitializerList() -> ASTParser<[Initializer]> {
     return cons
         <^> (parseInitializer() <* match(.comma))
         <*> parseInitializerList()
 }
 
-func parseCompoundStatement() -> ASTParser<CompoundStatement<Parsing>> {
+func parseCompoundStatement() -> ASTParser<CompoundStatement> {
     return match(.leftBrace) *> (
         curry(CompoundStatement.init)
             <^> many(parseDeclaration())
@@ -130,7 +130,7 @@ func parseCompoundStatement() -> ASTParser<CompoundStatement<Parsing>> {
         ) <* match(.rightBrace)
 }
 
-func parseStatement() -> ASTParser<Statement<Parsing>> {
+func parseStatement() -> ASTParser<Statement> {
     return choice(
         [
             curry(Statement.compound) <^> parseCompoundStatement(),
@@ -141,14 +141,14 @@ func parseStatement() -> ASTParser<Statement<Parsing>> {
     )
 }
 
-func parseJumpStatement() -> ASTParser<JumpStatement<Parsing>> {
+func parseJumpStatement() -> ASTParser<JumpStatement> {
     return curry(JumpStatement.return)
         <^> match(.identifier("return"))
         *> orNil(parseExpression())
         <* match(.semicolon)
 }
 
-func parseSelectionStatement() -> ASTParser<SelectionStatement<Parsing>> {
+func parseSelectionStatement() -> ASTParser<SelectionStatement> {
     return curry(SelectionStatement.init)
         <^> match(.identifier("if"))
             *> match(.leftParen) *> parseExpression() <* match(.rightParen)
@@ -156,24 +156,24 @@ func parseSelectionStatement() -> ASTParser<SelectionStatement<Parsing>> {
         <*> orNil(match(.identifier("else")) *> parseStatement())
 }
 
-func parseExpressionStatement() -> ASTParser<ExpressionStatement<Parsing>> {
+func parseExpressionStatement() -> ASTParser<ExpressionStatement> {
     return curry(ExpressionStatement.init)
         <^> orNil(parseExpression()) <* match(.semicolon)
 }
 
-func parseExpression() -> ASTParser<Expression<Parsing>> {
+func parseExpression() -> ASTParser<Expression> {
     return curry(Expression.assignment) <^> parseAssignmentExpression() <*> .pure(nil)
         <|> parseAdditiveExpression()
 }
 
-func parseAssignmentExpression() -> ASTParser<AssignmentExpression<Parsing>> {
+func parseAssignmentExpression() -> ASTParser<AssignmentExpression> {
     return curry(AssignmentExpression.init)
         <^> parseUnaryExpression()
         <*> parseAssignmentOperator()
         <*> parseExpression()
 }
 
-func flattenBinaryExprs(_ head: Expression<Parsing>, exprs: [(Token, Expression<Parsing>)]) -> Expression<Parsing> {
+func flattenBinaryExprs(_ head: Expression, exprs: [(Token, Expression)]) -> Expression {
     return exprs.reduce(head) { expr1, pair in
         let (token, expr2) = pair
         switch token {
@@ -192,7 +192,7 @@ func flattenBinaryExprs(_ head: Expression<Parsing>, exprs: [(Token, Expression<
     }
 }
 
-func parseAdditiveExpression() -> ASTParser<Expression<Parsing>> {
+func parseAdditiveExpression() -> ASTParser<Expression> {
 
     let exprPair = curry({ ($0, $1) })
         <^> choice([.plus, .minus].map(match))
@@ -203,7 +203,7 @@ func parseAdditiveExpression() -> ASTParser<Expression<Parsing>> {
         <*> many(exprPair)
 }
 
-func parseMultiplicativeExpression() -> ASTParser<Expression<Parsing>> {
+func parseMultiplicativeExpression() -> ASTParser<Expression> {
     let unary = curry(Expression.unary)
         <^> parseUnaryExpression()
         <*> .pure(nil)
@@ -213,11 +213,11 @@ func parseMultiplicativeExpression() -> ASTParser<Expression<Parsing>> {
     return curry(flattenBinaryExprs) <^> unary <*> many(exprPair)
 }
 
-func parseUnaryExpression() -> ASTParser<UnaryExpression<Parsing>> {
+func parseUnaryExpression() -> ASTParser<UnaryExpression> {
     return UnaryExpression.postfix <^> parsePostfixExpression()
 }
 
-func parsePostfixExpression() -> ASTParser<PostfixExpression<Parsing>> {
+func parsePostfixExpression() -> ASTParser<PostfixExpression> {
     let primary = PostfixExpression.primary <^> parsePrimaryExpression()
     let functionCall = curry(PostfixExpression.functionCall)
         // TODO: Support recursive. Use parsePostFixExpression()
@@ -237,13 +237,13 @@ func parsePostfixExpression() -> ASTParser<PostfixExpression<Parsing>> {
 }
 
 // TODO: Use this
-func parseArgumentExpressionList() -> ASTParser<[AssignmentExpression<Parsing>]> {
+func parseArgumentExpressionList() -> ASTParser<[AssignmentExpression]> {
     return cons <^> parseAssignmentExpression()
         <*> many(match(.comma) *> parseAssignmentExpression())
 }
 
 
-func parsePrimaryExpression() -> ASTParser<PrimaryExpression<Parsing>> {
+func parsePrimaryExpression() -> ASTParser<PrimaryExpression> {
     return choice(
         [
             mapIdentifier(PrimaryExpression.identifier),
@@ -253,7 +253,7 @@ func parsePrimaryExpression() -> ASTParser<PrimaryExpression<Parsing>> {
     )
 }
 
-func parseConstant() -> ASTParser<Constant<Parsing>> {
+func parseConstant() -> ASTParser<Constant> {
     return choice(
         [
             Constant.integer <^> integer()

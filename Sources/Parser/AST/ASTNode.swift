@@ -1,4 +1,3 @@
-public enum Parsing {}
 public struct TranslationUnit<Phase> {
     public var externalDecls: [ExternalDeclaration<Phase>]
 }
