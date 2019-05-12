@@ -167,6 +167,7 @@ public enum TypeSpecifier: String {
     public func asType() -> Type {
         switch self {
         case .int: return .int
+        case .void: return .void
         default: fatalError()
         }
     }
@@ -236,7 +237,7 @@ public enum JumpStatement {
 }
 
 public struct SelectionStatement {
-    public let condition: Expression
-    public let thenStatement: Statement
-    public let elseStatement: Statement?
+    public var condition: Expression
+    public var thenStatement: Statement
+    public var elseStatement: Statement?
 }

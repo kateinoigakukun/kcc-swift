@@ -15,11 +15,19 @@ extension Array where Element == DeclarationSpecifier {
 public class TypeChecker {
 
     var context: DeclContext = [:]
+    var currentFunc: FunctionDefinition?
     let unit: TranslationUnit
 
     public init(unit: TranslationUnit) {
         self.unit = unit
-        self.context = makeContext(unit)
+        self.context = TypeChecker.builtin()
+            .merging(makeContext(unit), uniquingKeysWith: { $1 })
+    }
+
+    static func builtin() -> DeclContext {
+        return [
+            "print_char": .function(input: [.int], output: .void)
+        ]
     }
 
     public func check() -> TranslationUnit {
@@ -57,9 +65,23 @@ public class TypeChecker {
             }
         default: unimplemented()
         }
+        currentFunc = functionDefinition
         let compound = check(functionDefinition.compoundStatement)
         functionDefinition.compoundStatement = compound
         return functionDefinition
+    }
+
+    func check(_ statement: Statement) -> Statement {
+        switch statement {
+        case .expression(let exprStatement):
+            return .expression(check(exprStatement))
+        case .compound(let compoundStatement):
+            return .compound(check(compoundStatement))
+        case .jump(let jump):
+            return .jump(check(jump))
+        case .selection(let selection):
+            return .selection(check(selection))
+        }
     }
 
     func check(_ compoundStatement: CompoundStatement) -> CompoundStatement {
@@ -68,19 +90,39 @@ public class TypeChecker {
         self.context = compoundStatement.declaration.reduce(into: context) {
             $0.merge(self.makeContext($1), uniquingKeysWith: { $1 })
         }
-        let statements = compoundStatement.statement.map { stmt -> Statement in
-            switch stmt {
-            case .expression(let exprStatement):
-                return .expression(check(exprStatement))
-            case .compound(let compoundStatement):
-                return .compound(check(compoundStatement))
-            case .jump: unimplemented()
-            case .selection: unimplemented()
-            }
-        }
+        let statements = compoundStatement.statement.map(check)
         var compound = compoundStatement
         compound.statement = statements
         return compound
+    }
+
+    func check(_ jump: JumpStatement) -> JumpStatement {
+        switch jump {
+        case .return(.some(let expr)):
+            guard let function = currentFunc else { unimplemented() }
+            let checked = check(expr)
+            assert(function.outputType == checked.type)
+            return .return(checked)
+        case .return(.none):
+            guard let function = currentFunc else { unimplemented() }
+            assert(function.outputType == .void)
+            return jump
+        }
+    }
+
+    func check(_ selection: SelectionStatement) -> SelectionStatement {
+        var selection = selection
+        let condition = check(selection.condition)
+        assert(condition.type == .int)
+        selection.condition = condition
+        let previousContext = context
+        selection.thenStatement = check(selection.thenStatement)
+        context = previousContext
+        if let elseStatement = selection.elseStatement {
+            selection.elseStatement = check(elseStatement)
+            context = previousContext
+        }
+        return selection
     }
 
     func makeContext(_ unit: TranslationUnit) -> DeclContext {

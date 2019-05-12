@@ -41,4 +41,25 @@ final class SemaTests: XCTestCase {
         XCTAssertEqual(args.map { $0.type }, [.int])
         XCTAssertEqual(type, .int)
     }
+
+    func testCheckArguments() throws {
+        let content = """
+        void rec(int count) {
+            print_char(count);
+            if(count-100) {
+            } else {
+                return;
+            }
+            rec(count+1);
+            return;
+        }
+        void main() {
+            rec(97);
+        }
+        """
+        let tokens = try lex(content)
+        let unit = try parse(tokens)
+        let tc = TypeChecker(unit: unit)
+        _ = tc.check()
+    }
 }
