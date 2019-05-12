@@ -6,7 +6,18 @@ extension CodeGenTests {
     //   `swift test --generate-linuxmain`
     // to regenerate.
     static let __allTests__CodeGenTests = [
+        ("testArgument", testArgument),
         ("testCodeGen", testCodeGen),
+        ("testDecl", testDecl),
+        ("testIf", testIf),
+        ("testIfElse", testIfElse),
+        ("testIfElsePrimitive", testIfElsePrimitive),
+        ("testIfPrimitive", testIfPrimitive),
+        ("testMinus", testMinus),
+        ("testPlus", testPlus),
+        ("testPrintAbcd", testPrintAbcd),
+        ("testReturn", testReturn),
+        ("testVar", testVar),
     ]
 }
 
