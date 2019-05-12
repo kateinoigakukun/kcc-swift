@@ -12,7 +12,7 @@ public enum ExternalDeclaration {
 public struct FunctionDefinition {
     public let declarationSpecifier: [DeclarationSpecifier]
     public let declarator: Declarator
-    public let declaration: [Declaration]
+//    public let declaration: [Declaration]
     public var compoundStatement: CompoundStatement
     public var inputType: [Type]?
     public var outputType: Type?

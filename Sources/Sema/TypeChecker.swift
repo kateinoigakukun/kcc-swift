@@ -147,6 +147,7 @@ public class TypeChecker {
     func makeContext(_ functionDefinition: FunctionDefinition) -> DeclContext {
         var context: DeclContext = [:]
         let output = functionDefinition.declarationSpecifier.type!.asType() // TODO Throw error
+        functionDefinition.declarator
         switch functionDefinition.declarator.directDeclarator {
         case .function(.identifier(let name), let arguments):
             let inputs = arguments.compactMap {

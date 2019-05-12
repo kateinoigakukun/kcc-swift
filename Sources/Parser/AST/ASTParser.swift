@@ -24,7 +24,7 @@ func parseFunctionDefinition() -> ASTParser<FunctionDefinition> {
     return curry(FunctionDefinition.init)
         <^> many(parseDeclarationSpecifier())
         <*> parseDeclarator()
-        <*> many(parseDeclaration())
+//        <*> many(parseDeclaration())
         <*> parseCompoundStatement()
         <*> .pure(nil)
         <*> .pure(nil)
