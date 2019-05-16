@@ -26,7 +26,7 @@ public class Driver {
             let unit: TranslationUnit
             if isExperimental {
                 let tc = TypeChecker(unit: parsedUnit)
-                unit = tc.check()
+                unit = try! tc.check()
             } else {
                 unit = parsedUnit
             }

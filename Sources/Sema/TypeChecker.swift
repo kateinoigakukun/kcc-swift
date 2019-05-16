@@ -12,6 +12,32 @@ extension Array where Element == DeclarationSpecifier {
     }
 }
 
+extension FunctionDefinition {
+    var name: String? {
+        switch declarator.directDeclarator {
+        case .function(.identifier(let name), _):
+            return name
+        default: unimplemented()
+        }
+    }
+    var parameterTypeList: ParameterTypeList? {
+        switch declarator.directDeclarator {
+        case .function(_, let list): return list
+        default: return nil
+        }
+    }
+}
+
+extension ExternalDeclaration {
+    var functionDefinition: FunctionDefinition? {
+        switch self {
+        case .functionDefinition(let functionDefinition):
+            return functionDefinition
+        default: return nil
+        }
+    }
+}
+
 public class TypeChecker {
 
     var context: DeclContext = [:]
@@ -30,12 +56,27 @@ public class TypeChecker {
         ]
     }
 
-    public func check() -> TranslationUnit {
+    public func check() throws -> TranslationUnit {
         var unit = self.unit
         unit.externalDecls = unit.externalDecls.map {
             self.check($0)
         }
+        try checkEntry(unit)
         return unit
+    }
+
+    enum Error: Swift.Error {
+        case noMain
+        case mismatchReturnType(Type, to: Type)
+    }
+
+    func checkEntry(_ unit: TranslationUnit) throws {
+        guard let main = unit.externalDecls.lazy.compactMap({
+            ($0.functionDefinition?.name == "main") ? $0.functionDefinition : nil
+        }).first else { throw Error.noMain }
+        guard main.outputType == .int else {
+            throw Error.mismatchReturnType(main.outputType!, to: .int)
+        }
     }
 
     func check(_ externalDecl: ExternalDeclaration) -> ExternalDeclaration {
@@ -147,7 +188,6 @@ public class TypeChecker {
     func makeContext(_ functionDefinition: FunctionDefinition) -> DeclContext {
         var context: DeclContext = [:]
         let output = functionDefinition.declarationSpecifier.type!.asType() // TODO Throw error
-        functionDefinition.declarator
         switch functionDefinition.declarator.directDeclarator {
         case .function(.identifier(let name), let arguments):
             let inputs = arguments.compactMap {
