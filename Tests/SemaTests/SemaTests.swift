@@ -62,4 +62,17 @@ final class SemaTests: XCTestCase {
         let tc = TypeChecker(unit: unit)
         _ = try tc.check()
     }
+
+    func testCheckPointer() throws {
+        let content = """
+        int main() {
+            int value = 0;
+            int *ref = &value;
+        }
+        """
+        let tokens = try lex(content)
+        let unit = try parse(tokens)
+        let tc = TypeChecker(unit: unit)
+        _ = try tc.check()
+    }
 }
