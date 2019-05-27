@@ -203,17 +203,16 @@ func parseAdditiveExpression() -> ASTParser<Expression> {
 }
 
 func parseMultiplicativeExpression() -> ASTParser<Expression> {
-    let unary = curry(Expression.unary)
-        <^> parseUnaryExpression()
+    let unary = parseUnaryExpression()
     let exprPair = curry({ ($0, $1) })
         <^> choice([.multiply, .divide, .modulo].map(match))
         <*> unary
     return curry(flattenBinaryExprs) <^> unary <*> many(exprPair)
 }
 
-func parseUnaryExpression() -> ASTParser<UnaryExpression> {
-    return UnaryExpression.postfix <^> parsePostfixExpression()
-        <|> curry(UnaryExpression.operator)
+func parseUnaryExpression() -> ASTParser<Expression> {
+    return parsePostfixExpression()
+        <|> curry({ .unary(UnaryExpression(operator: $0, expression: $1)) })
             <^> parseUnaryOperator() <*> parseUnaryExpression()
 }
 
@@ -221,9 +220,9 @@ func parseUnaryOperator() -> ASTParser<UnaryOperator> {
     return match(.and) *> .pure(.and)
 }
 
-func parsePostfixExpression() -> ASTParser<PostfixExpression> {
-    let primary = PostfixExpression.primary <^> parsePrimaryExpression()
-    let functionCall = curry(PostfixExpression.functionCall)
+func parsePostfixExpression() -> ASTParser<Expression> {
+    let primary = Expression.primary <^> parsePrimaryExpression()
+    let functionCall = curry(Expression.functionCall)
         // TODO: Support recursive. Use parsePostFixExpression()
         <^> primary
         <*> (

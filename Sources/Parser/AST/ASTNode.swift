@@ -58,6 +58,9 @@ public indirect enum Expression: Equatable {
     case additive(AdditiveExpression)
     case multiplicative(MultiplicativeExpression)
     case unary(UnaryExpression)
+    case postfix(PostfixExpression)
+    case primary(PrimaryExpression)
+    case functionCall(Expression, [Expression], Type?)
 
     public var type: Type? {
         switch self {
@@ -69,12 +72,14 @@ public indirect enum Expression: Equatable {
             return assignment.type
         case .unary(let unary):
             return unary.type
+        case .primary(let primary):
+            return primary.type
         }
     }
 }
 
 public struct AssignmentExpression: Equatable {
-    public let lvalue: UnaryExpression
+    public let lvalue: Expression
     public let `operator`: AssignmentOperator
     public var rvalue: Expression
 
@@ -83,7 +88,7 @@ public struct AssignmentExpression: Equatable {
     }
 }
 
-public indirect enum AdditiveExpression: Equatable {
+public enum AdditiveExpression: Equatable {
     // TODO: Use multiplicative-expr
     case plus(Expression, Expression, Type?)
     case minus(Expression, Expression, Type?)
@@ -97,7 +102,7 @@ public indirect enum AdditiveExpression: Equatable {
     }
 }
 
-public indirect enum MultiplicativeExpression: Equatable {
+public enum MultiplicativeExpression: Equatable {
     case multiply(Expression, Expression, Type?)
     case divide(Expression, Expression, Type?)
     case modulo(Expression, Expression, Type?)
@@ -112,18 +117,13 @@ public indirect enum MultiplicativeExpression: Equatable {
     }
 }
 
-public indirect enum UnaryExpression: Equatable {
-    case postfix(PostfixExpression)
-    case `operator`(UnaryOperator, UnaryExpression) // TODO use cast-expression
+public struct UnaryExpression: Equatable {
+    public let `operator`: UnaryOperator
+    public var expression: Expression // TODO use cast-expression
     var type: Type? {
-        switch self {
-        case .postfix(let postfix):
-            return postfix.type
-        case .operator(let op, let expr):
-            switch op {
-            case .and:
-                return expr.type.map(Type.pointer)
-            }
+        switch `operator` {
+        case .and:
+            return expression.type.map(Type.pointer)
         }
     }
 }
@@ -132,17 +132,7 @@ public enum UnaryOperator {
     case and
 }
 
-indirect public enum PostfixExpression: Equatable {
-    case primary(PrimaryExpression)
-    case functionCall(PostfixExpression, [Expression], Type?)
-
-    public var type: Type? {
-        switch self {
-        case .primary(let primary): return primary.type
-        case .functionCall(_, _, let type): return type
-        }
-    }
-}
+public enum PostfixExpression: Equatable {}
 
 public enum PrimaryExpression: Equatable {
     case identifier(String, Type?)

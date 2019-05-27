@@ -208,6 +208,16 @@ public class CodeGenerator {
             return gen(additive, scope: scope)
         case .unary(let unary):
             return gen(unary, scope: scope)
+        case .functionCall(let postfix, let arguments, _):
+            return genFunctionCall(postfix, arguments, scope: scope)
+        case .primary(.identifier(let identifier, _)):
+            return (scope[identifier]!.ref, scope)
+        case .primary(.constant(.integer(let integer), _)):
+            return (.primitive(integer), scope)
+        case .primary(.string(_, _)):
+            unimplemented()
+        case .multiplicative:
+            unimplemented()
         }
     }
 
@@ -241,29 +251,13 @@ public class CodeGenerator {
         }
     }
     fileprivate func gen(_ unary: UnaryExpression, scope: Scope) -> (Reference, Scope) {
-        switch unary {
-        case .postfix(let postfix):
-            return gen(postfix, scope: scope)
-        case .operator: unimplemented()
-        }
-    }
-
-    fileprivate func gen(_ postfix: PostfixExpression, scope: Scope) -> (Reference, Scope) {
-        switch postfix {
-        case .functionCall(let postfix, let arguments, _):
-            return genFunctionCall(postfix, arguments, scope: scope)
-        case .primary(.identifier(let identifier, _)):
-            return (scope[identifier]!.ref, scope)
-        case .primary(.constant(.integer(let integer), _)):
-            return (.primitive(integer), scope)
-        default: unimplemented()
-        }
+        unimplemented()
     }
 
     fileprivate func genFunctionCall(
-        _ postfix: PostfixExpression,
+        _ name: Expression,
         _ arguments: [Expression], scope: Scope) -> (Reference, Scope) {
-        switch postfix {
+        switch name {
         case .primary(.identifier(let identifier, _)):
             let arguments = arguments.map { self.gen($0, scope: scope) }
             for (index, (reference, _)) in arguments.enumerated() {

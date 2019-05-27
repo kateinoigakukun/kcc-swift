@@ -282,34 +282,12 @@ public class TypeChecker {
             return .assignment(check(assignment))
         case .unary(let unary):
             return .unary(check(unary))
-        }
-    }
-
-    func check(_ assignment: AssignmentExpression) -> AssignmentExpression {
-        var assignment = assignment
-        switch assignment.lvalue {
-        case .postfix(.primary(.identifier(let id, _))):
-            let rvalue = check(assignment.rvalue)
-            context[id] = rvalue.type!
-            assignment.rvalue = rvalue
-            return assignment
-        default: unimplemented()
-        }
-    }
-
-    func check(_ unary: UnaryExpression) -> UnaryExpression {
-        switch unary {
         case .postfix(let postfix):
             return .postfix(check(postfix))
-        case .operator(let op, let expr):
-            return .operator(op, check(expr))
-        }
-    }
-
-    func check(_ postfix: PostfixExpression) -> PostfixExpression {
-        switch postfix {
-        case .functionCall(let postfixExpr, let arguments, _):
-            let postfix = check(postfixExpr)
+        case .primary(let primary):
+            return .primary(check(primary))
+        case .functionCall(let name, let arguments, _):
+            let postfix = check(name)
             switch postfix.type! {
             case .function(let input, let output):
                 let checkedArgs = arguments.map(self.check)
@@ -319,9 +297,29 @@ public class TypeChecker {
                 return .functionCall(postfix, checkedArgs, output)
             default: unimplemented() // TODO: Throw error
             }
-        case .primary(let primary):
-            return .primary(check(primary))
         }
+    }
+
+    func check(_ assignment: AssignmentExpression) -> AssignmentExpression {
+        var assignment = assignment
+        switch assignment.lvalue {
+        case .primary(.identifier(let id, _)):
+            let rvalue = check(assignment.rvalue)
+            context[id] = rvalue.type!
+            assignment.rvalue = rvalue
+            return assignment
+        default: unimplemented()
+        }
+    }
+
+    func check(_ unary: UnaryExpression) -> UnaryExpression {
+        var unary = unary
+        unary.expression = check(unary.expression)
+        return unary
+    }
+
+    func check(_ postfix: PostfixExpression) -> PostfixExpression {
+        fatalError()
     }
 
     func check(_ primary: PrimaryExpression) -> PrimaryExpression {

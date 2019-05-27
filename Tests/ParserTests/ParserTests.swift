@@ -7,17 +7,13 @@ final class ParserTests: XCTestCase {
         let content = "printf(1);"
         let tokens = try lex().parse(.root(content)).0
         let (result, _) = try parseUnaryExpression().parse(.root(tokens))
-        guard case let .postfix(expr) = result else { XCTFail(); return }
-        guard case let .functionCall(name, arguments, _) = expr else {
+        guard case let .functionCall(name, arguments, _) = result else {
             XCTFail(); return
         }
         guard case let .primary(.identifier(id, _)) = name else {
             XCTFail(); return
         }
-        guard case let .unary(.postfix(argument)) = arguments[0] else {
-            XCTFail(); return
-        }
-        guard case let .primary(.constant(.integer(arg), _)) = argument else {
+        guard case let .primary(.constant(.integer(arg), _)) = arguments[0] else {
             XCTFail(); return
         }
         XCTAssertEqual(id, "printf")
@@ -50,13 +46,7 @@ final class ParserTests: XCTestCase {
         let tokens = try lex(content)
         let (expr, tail) = try parseExpression().parse(.root(tokens))
         let integer = {
-            Expression.unary(
-                .postfix(
-                    .primary(
-                        .constant(Constant.integer($0), nil)
-                    )
-                )
-            )
+            Expression.primary(.constant(Constant.integer($0), nil))
         }
         XCTAssertEqual(
             expr,
@@ -78,13 +68,7 @@ final class ParserTests: XCTestCase {
         let tokens = try lex(content)
         let (expr, tail) = try parseExpression().parse(.root(tokens))
         let integer = {
-            Expression.unary(
-                .postfix(
-                    .primary(
-                        .constant(.integer($0), nil)
-                    )
-                )
-            )
+            Expression.primary(.constant(.integer($0), nil))
         }
         XCTAssertEqual(
             expr,
@@ -123,10 +107,7 @@ final class ParserTests: XCTestCase {
         let content = "if (1) 1;"
         let tokens = try lex(content)
         let (statement, _) = try parseSelectionStatement().parse(.root(tokens))
-        guard case let .unary(.postfix(postfix)) = statement.condition else {
-            XCTFail(); return
-        }
-        guard case let .primary(.constant(.integer(value), _)) = postfix else {
+        guard case let .primary(.constant(.integer(value), _)) = statement.condition else {
             XCTFail(); return
         }
         XCTAssertEqual(value, 1)

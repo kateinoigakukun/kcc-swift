@@ -31,9 +31,8 @@ final class SemaTests: XCTestCase {
             XCTFail()
             return
         }
-        guard case .some(
-            .unary(.postfix(.functionCall(
-                let name, let args, let type)))) = expr.expression else {
+        guard case .some(.functionCall(
+                let name, let args, let type)) = expr.expression else {
                     XCTFail()
                     return
         }
