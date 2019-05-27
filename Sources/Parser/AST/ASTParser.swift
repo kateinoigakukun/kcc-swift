@@ -222,7 +222,9 @@ func parseUnaryOperator() -> ASTParser<UnaryOperator> {
 
 func parsePostfixExpression() -> ASTParser<Expression> {
     let primary = Expression.primary <^> parsePrimaryExpression()
-    let functionCall = curry(Expression.functionCall)
+    let functionCall = curry({
+        Expression.functionCall(.init(name: $0, argumentList: $1, type: $2))
+    })
         // TODO: Support recursive. Use parsePostFixExpression()
         <^> primary
         <*> (

@@ -208,8 +208,8 @@ public class CodeGenerator {
             return gen(additive, scope: scope)
         case .unary(let unary):
             return gen(unary, scope: scope)
-        case .functionCall(let postfix, let arguments, _):
-            return genFunctionCall(postfix, arguments, scope: scope)
+        case .functionCall(let functionCall):
+            return gen(functionCall, scope: scope)
         case .primary(.identifier(let identifier, _)):
             return (scope[identifier]!.ref, scope)
         case .primary(.constant(.integer(let integer), _)):
@@ -237,29 +237,29 @@ public class CodeGenerator {
     fileprivate func gen(_ additive: AdditiveExpression, scope: Scope) -> (Reference, Scope) {
         switch additive {
         case let .plus(expr1, expr2, _):
-            return genFunctionCall(
-                .primary(.identifier("_add", nil)),
-                [expr1, expr2],
-                scope: scope
+            let call = FunctionCallExpression(
+                name: .primary(.identifier("_add", nil)),
+                argumentList: [expr1, expr2],
+                type: nil
             )
+            return gen(call, scope: scope)
         case let .minus(expr1, expr2, _):
-            return genFunctionCall(
-                .primary(.identifier("_sub", nil)),
-                [expr1, expr2],
-                scope: scope
+            let call = FunctionCallExpression(
+                name: .primary(.identifier("_sub", nil)),
+                argumentList: [expr1, expr2],
+                type: nil
             )
+            return gen(call, scope: scope)
         }
     }
     fileprivate func gen(_ unary: UnaryExpression, scope: Scope) -> (Reference, Scope) {
         unimplemented()
     }
 
-    fileprivate func genFunctionCall(
-        _ name: Expression,
-        _ arguments: [Expression], scope: Scope) -> (Reference, Scope) {
-        switch name {
+    fileprivate func gen(_ functionCall: FunctionCallExpression, scope: Scope) -> (Reference, Scope) {
+        switch functionCall.name {
         case .primary(.identifier(let identifier, _)):
-            let arguments = arguments.map { self.gen($0, scope: scope) }
+            let arguments = functionCall.argumentList.map { self.gen($0, scope: scope) }
             for (index, (reference, _)) in arguments.enumerated() {
                 let dist = ArgReg.allCases[index]
                 builder.mov(dist, reference)

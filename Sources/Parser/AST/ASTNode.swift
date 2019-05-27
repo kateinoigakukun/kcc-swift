@@ -60,7 +60,7 @@ public indirect enum Expression: Equatable {
     case unary(UnaryExpression)
     case postfix(PostfixExpression)
     case primary(PrimaryExpression)
-    case functionCall(Expression, [Expression], Type?)
+    case functionCall(FunctionCallExpression)
 
     public var type: Type? {
         switch self {
@@ -74,7 +74,21 @@ public indirect enum Expression: Equatable {
             return unary.type
         case .primary(let primary):
             return primary.type
+        case .functionCall(let functionCall):
+            return functionCall.type
         }
+    }
+}
+
+public struct FunctionCallExpression: Equatable {
+    public var name: Expression
+    public var argumentList: [Expression]
+    public var type: Type?
+
+    public init(name: Expression, argumentList: [Expression], type: Type?) {
+        self.name = name
+        self.argumentList = argumentList
+        self.type = type
     }
 }
 

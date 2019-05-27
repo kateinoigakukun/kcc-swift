@@ -7,13 +7,9 @@ final class ParserTests: XCTestCase {
         let content = "printf(1);"
         let tokens = try lex().parse(.root(content)).0
         let (result, _) = try parseUnaryExpression().parse(.root(tokens))
-        guard case let .functionCall(name, arguments, _) = result else {
-            XCTFail(); return
-        }
-        guard case let .primary(.identifier(id, _)) = name else {
-            XCTFail(); return
-        }
-        guard case let .primary(.constant(.integer(arg), _)) = arguments[0] else {
+        guard case let .functionCall(call) = result,
+            case let .primary(.identifier(id, _)) = call.name,
+            case let .primary(.constant(.integer(arg), _)) = call.argumentList[0] else {
             XCTFail(); return
         }
         XCTAssertEqual(id, "printf")
@@ -24,10 +20,8 @@ final class ParserTests: XCTestCase {
         let content = "return 1;"
         let tokens = try lex(content)
         let (statement, _) = try parseJumpStatement().parse(.root(tokens))
-        switch statement {
-        case .return(let expr):
-            XCTAssertNotNil(expr)
-        }
+        guard case .return(let expr) = statement else { XCTFail(); return }
+        XCTAssertNotNil(expr)
     }
 
     func testParseReturnFunc() throws {
@@ -214,16 +208,14 @@ final class ParserTests: XCTestCase {
 
         let (unit, _) = try parseTranslationUnit().parse(.root(tokens))
         XCTAssertEqual(unit.externalDecls.count, 1)
-        let decl = unit.externalDecls[0]
-        switch decl {
-        case .functionDefinition(let function):
-            XCTAssertEqual(function.declarationSpecifier, [.typeSpecifier(.int)])
-            XCTAssertEqual(
-                function.declarator.directDeclarator,
-                .function(.identifier("main"), .default([]))
-            )
-            XCTAssertEqual(function.compoundStatement.statement.count, 1)
-        default: XCTFail()
+        guard case .functionDefinition(let function) = unit.externalDecls[0] else {
+            XCTFail(); return
         }
+        XCTAssertEqual(function.declarationSpecifier, [.typeSpecifier(.int)])
+        XCTAssertEqual(
+            function.declarator.directDeclarator,
+            .function(.identifier("main"), .default([]))
+        )
+        XCTAssertEqual(function.compoundStatement.statement.count, 1)
     }
 }

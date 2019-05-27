@@ -16,29 +16,20 @@ final class SemaTests: XCTestCase {
         let tc = TypeChecker(unit: unit)
         XCTAssertEqual(tc.context["main"], .function(input: [.int], output: .int))
         let checked = try tc.check()
-        switch checked.externalDecls[0] {
-        case .functionDefinition(let def):
-            XCTAssertEqual(def.inputType, [.int])
-            XCTAssertEqual(def.outputType, .int)
-        default: XCTFail()
+        guard case .functionDefinition(let foo) = checked.externalDecls[0] else {
+            XCTFail(); return
         }
-        guard case .functionDefinition(let def) = checked.externalDecls[1] else {
-            XCTFail()
-            return
+        XCTAssertEqual(foo.inputType, [.int])
+        XCTAssertEqual(foo.outputType, .int)
+        guard
+            case .functionDefinition(let main) = checked.externalDecls[1],
+            case .expression(let expr) = main.compoundStatement.statement[0],
+            case .some(.functionCall(let call)) = expr.expression else {
+                XCTFail(); return
         }
-        let stmt = def.compoundStatement.statement[0]
-        guard case .expression(let expr) = stmt else {
-            XCTFail()
-            return
-        }
-        guard case .some(.functionCall(
-                let name, let args, let type)) = expr.expression else {
-                    XCTFail()
-                    return
-        }
-        XCTAssertEqual(name.type, .function(input: [.int], output: .int))
-        XCTAssertEqual(args.map { $0.type }, [.int])
-        XCTAssertEqual(type, .int)
+        XCTAssertEqual(call.name.type, .function(input: [.int], output: .int))
+        XCTAssertEqual(call.argumentList.map { $0.type }, [.int])
+        XCTAssertEqual(call.type, .int)
     }
 
     func testCheckArguments() throws {

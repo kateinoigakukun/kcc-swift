@@ -282,21 +282,27 @@ public class TypeChecker {
             return .assignment(check(assignment))
         case .unary(let unary):
             return .unary(check(unary))
-        case .postfix(let postfix):
-            return .postfix(check(postfix))
         case .primary(let primary):
             return .primary(check(primary))
-        case .functionCall(let name, let arguments, _):
-            let postfix = check(name)
-            switch postfix.type! {
-            case .function(let input, let output):
-                let checkedArgs = arguments.map(self.check)
-                for (argument, type) in zip(checkedArgs, input)  {
-                    assert(argument.type == type)
-                }
-                return .functionCall(postfix, checkedArgs, output)
-            default: unimplemented() // TODO: Throw error
+        case .functionCall(let functionCall):
+            return .functionCall(check(functionCall))
+        }
+    }
+
+    func check(_ functionCall: FunctionCallExpression) -> FunctionCallExpression {
+        var functionCall = functionCall
+        let checkedName = check(functionCall.name)
+        switch checkedName.type! {
+        case .function(let input, let output):
+            let checkedArgs = functionCall.argumentList.map(self.check)
+            for (argument, type) in zip(checkedArgs, input)  {
+                assert(argument.type == type)
             }
+            functionCall.name = checkedName
+            functionCall.argumentList = checkedArgs
+            functionCall.type = output
+            return functionCall
+        default: unimplemented() // TODO: Throw error
         }
     }
 
