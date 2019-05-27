@@ -21,8 +21,7 @@ public struct FunctionDefinition {
 
 public struct Declaration {
     public let declarationSpecifier: [DeclarationSpecifier]
-    public let initDeclarator: [InitDeclarator]
-    public var type: Type?
+    public var initDeclarator: [InitDeclarator]
 }
 
 
@@ -38,7 +37,7 @@ public struct Declarator: Equatable {
 }
 
 public struct CompoundStatement {
-    public let declaration: [Declaration]
+    public var declaration: [Declaration]
     public var statement: [Statement]
 }
 
@@ -113,14 +112,24 @@ public indirect enum MultiplicativeExpression: Equatable {
     }
 }
 
-public enum UnaryExpression: Equatable {
+public indirect enum UnaryExpression: Equatable {
     case postfix(PostfixExpression)
+    case `operator`(UnaryOperator, UnaryExpression) // TODO use cast-expression
     var type: Type? {
         switch self {
         case .postfix(let postfix):
             return postfix.type
+        case .operator(let op, let expr):
+            switch op {
+            case .and:
+                return expr.type.map(Type.pointer)
+            }
         }
     }
+}
+
+public enum UnaryOperator {
+    case and
 }
 
 indirect public enum PostfixExpression: Equatable {
@@ -178,8 +187,8 @@ public enum TypeQualifier: String {
 }
 
 public struct InitDeclarator {
-    public let declarator: Declarator
-    public let initializer: Initializer?
+    public var declarator: Declarator
+    public var initializer: Initializer?
 }
 
 public enum Initializer {

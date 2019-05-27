@@ -89,7 +89,6 @@ func parseDeclaration() -> ASTParser<Declaration> {
     return curry(Declaration.init)
         <^> many1(parseDeclarationSpecifier())
         <*> (many(parseInitDeclarator()) <* match(.semicolon))
-        <*> .pure(nil)
 }
 
 
@@ -214,6 +213,12 @@ func parseMultiplicativeExpression() -> ASTParser<Expression> {
 
 func parseUnaryExpression() -> ASTParser<UnaryExpression> {
     return UnaryExpression.postfix <^> parsePostfixExpression()
+        <|> curry(UnaryExpression.operator)
+            <^> parseUnaryOperator() <*> parseUnaryExpression()
+}
+
+func parseUnaryOperator() -> ASTParser<UnaryOperator> {
+    return match(.and) *> .pure(.and)
 }
 
 func parsePostfixExpression() -> ASTParser<PostfixExpression> {

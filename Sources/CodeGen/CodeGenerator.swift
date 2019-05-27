@@ -244,6 +244,7 @@ public class CodeGenerator {
         switch unary {
         case .postfix(let postfix):
             return gen(postfix, scope: scope)
+        case .operator: unimplemented()
         }
     }
 

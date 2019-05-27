@@ -68,11 +68,16 @@ final class SemaTests: XCTestCase {
         int main() {
             int value = 0;
             int *ref = &value;
+            return 0;
         }
         """
         let tokens = try lex(content)
         let unit = try parse(tokens)
         let tc = TypeChecker(unit: unit)
-        _ = try tc.check()
+        let checked = try tc.check()
+        let main = checked.externalDecls.first!.functionDefinition!
+        let ref = main.compoundStatement.declaration[0]
+        XCTFail("TODO")
+//        XCTAssertEqual(ref.initDeclarator[0].initializer, Type.pointer(.int))
     }
 }

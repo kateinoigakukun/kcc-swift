@@ -38,6 +38,15 @@ extension ExternalDeclaration {
     }
 }
 
+extension Pointer {
+    func type(of ty: Type) -> Type {
+        if let nested = pointer.value {
+            return .pointer(nested.type(of: ty))
+        }
+        return .pointer(ty)
+    }
+}
+
 public class TypeChecker {
 
     var context: DeclContext = [:]
@@ -131,10 +140,35 @@ public class TypeChecker {
         self.context = compoundStatement.declaration.reduce(into: context) {
             $0.merge(self.makeContext($1), uniquingKeysWith: { $1 })
         }
+        let declarations = compoundStatement.declaration.map(check)
         let statements = compoundStatement.statement.map(check)
         var compound = compoundStatement
         compound.statement = statements
+        compound.declaration = declarations
         return compound
+    }
+
+    func check(_ decl: Declaration) -> Declaration {
+        var decl = decl
+        decl.initDeclarator = decl.initDeclarator.map(check)
+        return decl
+    }
+
+    func check(_ initDeclarator: InitDeclarator) -> InitDeclarator {
+        var initDeclarator = initDeclarator
+        if let initializer = initDeclarator.initializer {
+            initDeclarator.initializer = check(initializer)
+        }
+        return initDeclarator
+    }
+
+    func check(_ initializer: Initializer) -> Initializer {
+        switch initializer {
+        case .expression(let expr):
+            return .expression(check(expr))
+        case .initializerList(let list):
+            return .initializerList(list.map(check))
+        }
     }
 
     func check(_ jump: JumpStatement) -> JumpStatement {
@@ -267,6 +301,8 @@ public class TypeChecker {
         switch unary {
         case .postfix(let postfix):
             return .postfix(check(postfix))
+        case .operator(let op, let expr):
+            return .operator(op, check(expr))
         }
     }
 
