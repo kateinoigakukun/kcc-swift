@@ -217,7 +217,11 @@ func parseUnaryExpression() -> ASTParser<Expression> {
 }
 
 func parseUnaryOperator() -> ASTParser<UnaryOperator> {
-    return match(.and) *> .pure(.and)
+    let ops = [
+        (Token.and, UnaryOperator.and),
+        (Token.multiply, UnaryOperator.star)
+    ]
+    return choice(ops.map { match($0) *> .pure($1) })
 }
 
 func parsePostfixExpression() -> ASTParser<Expression> {

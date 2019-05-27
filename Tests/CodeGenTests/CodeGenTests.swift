@@ -25,6 +25,18 @@ final class CodeGenTests: XCTestCase {
         try XCTAssertEqual(executeSource(content), "Hello, world!")
     }
 
+    func testPointer() throws {
+        let content = """
+        int main() {
+            int value = 65;
+            int *ref = &value;
+            print_char(*ref);
+            return 0;
+        }
+        """
+        try XCTAssertEqual(executeSource(content), "A")
+    }
+
     func testDecl() throws {
         let content = """
         void main() {

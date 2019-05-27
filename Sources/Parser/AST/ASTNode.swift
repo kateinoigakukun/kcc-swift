@@ -138,12 +138,15 @@ public struct UnaryExpression: Equatable {
         switch `operator` {
         case .and:
             return expression.type.map(Type.pointer)
+        case .star:
+            return expression.type
         }
     }
 }
 
 public enum UnaryOperator {
     case and
+    case star
 }
 
 public enum PostfixExpression: Equatable {}

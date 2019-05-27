@@ -58,6 +58,7 @@ final class SemaTests: XCTestCase {
         int main() {
             int value = 0;
             int *ref = &value;
+            print_char(*ref);
             return 0;
         }
         """
