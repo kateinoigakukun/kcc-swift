@@ -102,7 +102,7 @@ public class TypeChecker {
         var functionDefinition = functionDefinition
         switch functionDefinition.declarator.directDeclarator {
         case .function(.identifier(let name), let arguments):
-            guard case let .some(.function(input, output)) = context[name] else {
+            guard case let .function(input, output)? = context[name] else {
                 unimplemented()
             }
             functionDefinition.inputType = input

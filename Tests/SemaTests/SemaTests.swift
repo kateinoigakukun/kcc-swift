@@ -24,7 +24,7 @@ final class SemaTests: XCTestCase {
         guard
             case .functionDefinition(let main) = checked.externalDecls[1],
             case .expression(let expr) = main.compoundStatement.statement[0],
-            case .some(.functionCall(let call)) = expr.expression else {
+            case .functionCall(let call)? = expr.expression else {
                 XCTFail(); return
         }
         XCTAssertEqual(call.name.type, .function(input: [.int], output: .int))
@@ -66,8 +66,10 @@ final class SemaTests: XCTestCase {
         let tc = TypeChecker(unit: unit)
         let checked = try tc.check()
         let main = checked.externalDecls.first!.functionDefinition!
-        let ref = main.compoundStatement.declaration[0]
-        XCTFail("TODO")
-//        XCTAssertEqual(ref.initDeclarator[0].initializer, Type.pointer(.int))
+        let ref = main.compoundStatement.declaration[1]
+        guard case .expression(let expr)? = ref.initDeclarator[0].initializer else {
+            XCTFail(); return
+        }
+        XCTAssertEqual(expr.type, Type.pointer(.int))
     }
 }
