@@ -253,7 +253,24 @@ public class CodeGenerator {
         }
     }
     fileprivate func gen(_ unary: UnaryExpression, scope: Scope) -> (Reference, Scope) {
-        unimplemented()
+        switch unary.operator {
+        case .and:
+            let (ref, scope1) = gen(unary.expression, scope: scope)
+            let pointer: Reference
+            switch ref {
+            case .stack(let depth):
+                builder.mov(.r10, .rbp)
+                builder.sub(.r10, depth)
+                pointer = .register(Reg.r10)
+            default: unimplemented()
+            }
+            return (pointer, scope1)
+        case .star:
+            let (ref, scope1) = gen(unary.expression, scope: scope)
+            builder.mov(.r11, ref.asOperand())
+            builder.mov(.r10, "[r11]")
+            return (.register(Reg.r10), scope1)
+        }
     }
 
     fileprivate func gen(_ functionCall: FunctionCallExpression, scope: Scope) -> (Reference, Scope) {

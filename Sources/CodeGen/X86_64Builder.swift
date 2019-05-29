@@ -14,6 +14,7 @@ protocol BuilderOverloads {
     func ret()
 
     func mov(_ dst: String, _ src: Reg)
+    func mov(_ dst: Reg, _ src: String)
     func mov(_ dst: Reg, _ src: Reg)
     func mov(_ dst: Reg, _ src: ArgReg)
     func mov(_ dst: ArgReg, _ src: Reg)
@@ -35,10 +36,12 @@ protocol BuilderOverloads {
     func cmp(_ value1: Int, _ value2: Int)
     func cmp(_ value1: CodeGenerator.Reference, _ value2: Int)
 
+    func add(_ dst: Reg, _ src: Int)
     func add(_ dst: Reg, _ src: Reg)
     func add(_ dst: Reg, _ src: ArgReg)
     func add(_ dst: ArgReg, _ src: ArgReg)
 
+    func sub(_ dst: Reg, _ src: Int)
     func sub(_ dst: Reg, _ src: Reg)
     func sub(_ dst: Reg, _ src: ArgReg)
     func sub(_ dst: ArgReg, _ src: ArgReg)
