@@ -26,15 +26,29 @@ final class CodeGenTests: XCTestCase {
     }
 
     func testPointer() throws {
-        let content = """
-        int main() {
-            int value = 65;
-            int *ref = &value;
-            print_char(*ref);
-            return 0;
+        do {
+            let content = """
+            int main() {
+                int value = 65;
+                int *ref = &value;
+                print_char(*ref);
+                return 0;
+            }
+            """
+            try XCTAssertEqual(executeSource(content), "A")
         }
-        """
-        try XCTAssertEqual(executeSource(content), "A")
+        do {
+            let content = """
+            int main() {
+                int value = 65;
+                int *ref = &value;
+                *ref = 66;
+                print_char(*ref);
+                return 0;
+            }
+            """
+            try XCTAssertEqual(executeSource(content), "B")
+        }
     }
 
     func testDecl() throws {

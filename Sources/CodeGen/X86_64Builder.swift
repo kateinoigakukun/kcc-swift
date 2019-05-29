@@ -15,6 +15,7 @@ protocol BuilderOverloads {
 
     func mov(_ dst: String, _ src: Reg)
     func mov(_ dst: Reg, _ src: String)
+    func mov(_ dst: String, _ src: String)
     func mov(_ dst: Reg, _ src: Reg)
     func mov(_ dst: Reg, _ src: ArgReg)
     func mov(_ dst: ArgReg, _ src: Reg)
@@ -23,8 +24,8 @@ protocol BuilderOverloads {
     func mov(_ dst: Reg, _ src: Int)
     func mov(_ dst: Reg, _ src: CodeGenerator.Reference)
     func mov(_ dst: ArgReg, _ src: CodeGenerator.Reference)
-    func mov(_ dst: CodeGenerator.Reference, _ src: CodeGenerator.Reference)
-    func mov(_ dst: CodeGenerator.Reference, _ src: String)
+    func mov(_ dst: CodeGenerator.Variable, _ src: CodeGenerator.Reference)
+    func mov(_ dst: CodeGenerator.Variable, _ src: String)
 
     func pop(_ reg: Reg)
     func push(_ reg: Reg)
@@ -128,7 +129,11 @@ class X86_64Builder {
 }
 
 extension X86_64Builder: BuilderOverloads {}
-
+extension CodeGenerator.Variable: Operandable {
+    func asOperand() -> String {
+        return "[rbp - \(stackDepth)]"
+    }
+}
 extension CodeGenerator.Reference: Operandable {
     func asOperand() -> String {
         switch self {

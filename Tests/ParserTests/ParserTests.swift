@@ -3,6 +3,20 @@ import XCTest
 
 final class ParserTests: XCTestCase {
 
+    func testParsePointer() throws {
+        let content = """
+        int main() {
+            int value = 65;
+            int *ref = &value;
+            *ref = 66;
+            return 0;
+        }
+        """
+        let tokens = try lex(content)
+        let unit = try parse(tokens)
+        XCTAssertEqual(unit.externalDecls.count, 1)
+    }
+
     func testParseFunctionCall() throws {
         let content = "printf(1);"
         let tokens = try lex().parse(.root(content)).0

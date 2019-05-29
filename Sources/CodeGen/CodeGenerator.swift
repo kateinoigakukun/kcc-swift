@@ -214,7 +214,9 @@ public class CodeGenerator {
         ) -> Reference {
         switch assignment.operator {
         case .equal:
-            let lValue = gen(assignment.lvalue, scope: scope)
+            guard case .stack(let lValue) = gen(assignment.lvalue, scope: scope) else {
+                unimplemented()
+            }
             let rValue = gen(assignment.rvalue, scope: scope)
             // TODO: Size is fixed as Int. Change size by variable type later
             builder.mov(lValue, "dword \(rValue.asOperand())")
@@ -249,15 +251,16 @@ public class CodeGenerator {
             case .stack(let variable):
                 builder.mov(.r10, .rbp)
                 builder.sub(.r10, variable.stackDepth)
+                builder.mov(.r10, "[r10]")
                 pointer = .register(Reg.r10)
             default: unimplemented()
             }
             return pointer
         case .star:
-            let ref = gen(unary.expression, scope: scope)
-            builder.mov(.r11, ref.asOperand())
-            builder.mov(.r10, "[r11]")
-            return .register(Reg.r10)
+            guard case .stack(let ref) = gen(unary.expression, scope: scope) else {
+                unimplemented()
+            }
+            return .stack(ref)
         }
     }
 
