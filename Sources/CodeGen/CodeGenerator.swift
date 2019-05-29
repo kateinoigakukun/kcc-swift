@@ -12,12 +12,14 @@ public class CodeGenerator {
     }
     enum Context {
         case `func`(FunctionDefinition, returnLabel: String)
+        case global
     }
     class Scope {
         private var table: [String: Binding] = [:]
         private weak var parent: Scope?
         let context: Context
-        init(context: Context) { self.context = context }
+        static func global() -> Scope { return Scope(context: .global) }
+        private init(context: Context) { self.context = context }
         private init(context: Context, parent: Scope) {
             self.context = context
             self.parent = parent
@@ -36,6 +38,7 @@ public class CodeGenerator {
         }
     }
     let builder: BuilderOverloads = X86_64Builder.init()
+    let global = Scope.global()
 
     public init() {}
     public func generate(_ unit: TranslationUnit) -> String {
@@ -69,8 +72,8 @@ public class CodeGenerator {
             builder.label(name)
              // TODO: Make scope from global scope
             let returnLabel = builder.newLabel()
-            var scope = Scope(
-                context: .func(funcDefinition, returnLabel: returnLabel)
+            var scope = global.makeChild(
+                .func(funcDefinition, returnLabel: returnLabel)
             )
             var stackDepth: Int = 0
             builder.push(.rbp)
@@ -79,7 +82,6 @@ public class CodeGenerator {
                 guard case let .identifier(id) = argument.declarator.directDeclarator else {
                     unimplemented()
                 }
-                // TODO: support type check
                 let register = ArgReg.allCases[index]
                 stackDepth += 8
                 let reference = Reference.stack(depth: stackDepth)
@@ -150,33 +152,19 @@ public class CodeGenerator {
     }
 
     fileprivate func gen(_ selection: SelectionStatement, scope: Scope) -> Scope {
-        var (ref, scope) = gen(selection.condition, scope: scope)
+        let (ref, scope) = gen(selection.condition, scope: scope)
         let elseLabel = builder.newLabel()
         let endLabel = builder.newLabel()
-        switch ref {
-        case .primitive(let value):
-            // Compile time computing optimization
-            if value != 0 {
-                scope = gen(selection.thenStatement, scope: scope)
-            } else if let elseStatement = selection.elseStatement {
-                scope = gen(elseStatement, scope: scope)
-            }
-            return scope
-        case .stack:
-            // Avoid to compare stack value directly
-            builder.mov(.r10, ref)
-            ref = .register(Reg.r10)
-        default: break
-        }
-        builder.cmp(ref, 0)
+        builder.mov(.r10, ref)
+        builder.cmp(.r10, 0)
         builder.je(elseLabel)
 
-        scope = gen(selection.thenStatement, scope: scope)
+        _ = gen(selection.thenStatement, scope: scope)
         builder.jmp(endLabel)
 
         builder.label(elseLabel)
         if let elseStatement = selection.elseStatement {
-            scope = gen(elseStatement, scope: scope)
+            _ = gen(elseStatement, scope: scope)
         }
         builder.label(endLabel)
         return scope
@@ -186,14 +174,12 @@ public class CodeGenerator {
     fileprivate func gen(_ jumpStatement: JumpStatement, scope: Scope) -> Scope {
         switch jumpStatement {
         case .return(let optionalExpr):
-            var scope = scope
             guard case let .func(_, returnLabel) = scope.context else {
                 unimplemented()
             }
             if let expr = optionalExpr {
-                let (ref, _scope) = gen(expr, scope: scope)
+                let (ref, _) = gen(expr, scope: scope)
                 builder.mov(.rax, ref)
-                scope = _scope
             }
             builder.jmp(returnLabel)
             return scope

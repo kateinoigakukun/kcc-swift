@@ -35,6 +35,7 @@ protocol BuilderOverloads {
 
     func cmp(_ value1: Int, _ value2: Int)
     func cmp(_ value1: CodeGenerator.Reference, _ value2: Int)
+    func cmp(_ value1: Reg, _ value2: Int)
 
     func add(_ dst: Reg, _ src: Int)
     func add(_ dst: Reg, _ src: Reg)
