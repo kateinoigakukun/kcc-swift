@@ -1,5 +1,6 @@
 import XCTest
 @testable import CodeGen
+import Sema
 import Parser
 import MirrorDiffKit
 
@@ -53,9 +54,10 @@ final class CodeGenTests: XCTestCase {
 
     func testDecl() throws {
         let content = """
-        void main() {
+        int main() {
             int value = 65;
             print_char(value);
+            return 0;
         }
         """
         try XCTAssertEqual(executeSource(content), "A")
@@ -63,17 +65,16 @@ final class CodeGenTests: XCTestCase {
 
     func testPrintAbcd() throws {
         let content = """
-        int rec(int count) {
+        void rec(int count) {
             print_char(count);
             if(count-100) {
-            } else {
-                return;
+                rec(count+1);
             }
-            rec(count+1);
             return;
         }
-        void main() {
+        int main() {
             rec(97);
+            return 0;
         }
         """
         try XCTAssertEqual(executeSource(content), "abcd")
@@ -90,10 +91,11 @@ final class CodeGenTests: XCTestCase {
 
     func testVar() throws {
         let content = """
-        void main() {
+        int main() {
             int value = 65;
             value = 66;
             print_char(value);
+            return 0;
         }
         """
         try XCTAssertEqual(executeSource(content), "B")
@@ -194,8 +196,9 @@ extension CodeGenTests {
     func executeSource(_ source: String) throws -> String {
         let tokens = try lex(source)
         let unit = try parse(tokens)
+        let checked = try TypeChecker(unit: unit).check()
         let generator = CodeGenerator()
-        let code = generator.generate(unit)
+        let code = generator.generate(checked)
         return try executeCode(code)
     }
 

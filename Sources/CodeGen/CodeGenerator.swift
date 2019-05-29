@@ -291,9 +291,7 @@ public class CodeGenerator {
         */
         builder.label("_main")
         builder.call("main")
-        builder.mov(.rax, .exit)
-        builder.mov(.rdi, 0)
-        builder.syscall()
+        builder.ret()
     }
 
     fileprivate func genPrint_char() {

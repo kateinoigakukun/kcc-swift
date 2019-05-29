@@ -308,14 +308,11 @@ public class TypeChecker {
 
     func check(_ assignment: AssignmentExpression) -> AssignmentExpression {
         var assignment = assignment
-        switch assignment.lvalue {
-        case .primary(.identifier(let id, _)):
-            let rvalue = check(assignment.rvalue)
-            context[id] = rvalue.type!
-            assignment.rvalue = rvalue
-            return assignment
-        default: unimplemented()
-        }
+        let lValue = check(assignment.lvalue)
+        let rValue = check(assignment.rvalue)
+        assert(lValue.type == rValue.type)
+        assignment.rvalue = rValue
+        return assignment
     }
 
     func check(_ unary: UnaryExpression) -> UnaryExpression {
