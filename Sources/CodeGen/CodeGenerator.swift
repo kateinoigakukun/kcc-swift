@@ -107,7 +107,6 @@ public class CodeGenerator {
     }
 
     fileprivate func gen(_ decl: Declaration, scope: Scope, stackDepth: Int) -> (scope: Scope, stackDepth: Int) {
-        var scope = scope
         var stackDepth = stackDepth
         for initDeclarator in decl.initDeclarator {
             switch initDeclarator.declarator.directDeclarator {
@@ -122,9 +121,8 @@ public class CodeGenerator {
                 }
                 switch initializer {
                 case .expression(let expr):
-                    let (value, newScope) = gen(expr, scope: scope)
+                    let value = gen(expr, scope: scope)
                     builder.push(value)
-                    scope = newScope
                 default: unimplemented()
                 }
             default: unimplemented()
@@ -137,7 +135,8 @@ public class CodeGenerator {
         switch statement {
         case .expression(let exprStatement):
             guard let expr = exprStatement.expression else { unimplemented() }
-            return gen(expr, scope: scope).1
+            _ = gen(expr, scope: scope)
+            return scope
         case .jump(let jumpStatement):
             return gen(jumpStatement, scope: scope)
         case .compound(let compoundStatement):
@@ -152,7 +151,7 @@ public class CodeGenerator {
     }
 
     fileprivate func gen(_ selection: SelectionStatement, scope: Scope) -> Scope {
-        let (ref, scope) = gen(selection.condition, scope: scope)
+        let ref = gen(selection.condition, scope: scope)
         let elseLabel = builder.newLabel()
         let endLabel = builder.newLabel()
         builder.mov(.r10, ref)
@@ -178,7 +177,7 @@ public class CodeGenerator {
                 unimplemented()
             }
             if let expr = optionalExpr {
-                let (ref, _) = gen(expr, scope: scope)
+                let ref = gen(expr, scope: scope)
                 builder.mov(.rax, ref)
             }
             builder.jmp(returnLabel)
@@ -186,7 +185,7 @@ public class CodeGenerator {
         }
     }
 
-    fileprivate func gen(_ expr: Expression, scope: Scope) -> (Reference, Scope) {
+    fileprivate func gen(_ expr: Expression, scope: Scope) -> Reference {
         switch expr {
         case .assignment(let assignment):
             return gen(assignment, scope: scope)
@@ -197,9 +196,9 @@ public class CodeGenerator {
         case .functionCall(let functionCall):
             return gen(functionCall, scope: scope)
         case .primary(.identifier(let identifier, _)):
-            return (scope[identifier]!.ref, scope)
+            return scope[identifier]!.ref
         case .primary(.constant(.integer(let integer), _)):
-            return (.primitive(integer), scope)
+            return .primitive(integer)
         case .primary(.string(_, _)):
             unimplemented()
         case .multiplicative:
@@ -209,18 +208,18 @@ public class CodeGenerator {
 
     fileprivate func gen(
         _ assignment: AssignmentExpression, scope: Scope
-        ) -> (Reference, Scope) {
+        ) -> Reference {
         switch assignment.operator {
         case .equal:
-            let (lRef, scope1) = gen(assignment.lvalue, scope: scope)
-            let (value, scope2) = gen(assignment.rvalue, scope: scope1)
+            let lValue = gen(assignment.lvalue, scope: scope)
+            let rValue = gen(assignment.rvalue, scope: scope)
             // TODO: Size is fixed as Int. Change size by variable type later
-            builder.mov(lRef, "dword \(value.asOperand())")
-            return (value, scope2)
+            builder.mov(lValue, "dword \(rValue.asOperand())")
+            return rValue
         }
     }
 
-    fileprivate func gen(_ additive: AdditiveExpression, scope: Scope) -> (Reference, Scope) {
+    fileprivate func gen(_ additive: AdditiveExpression, scope: Scope) -> Reference {
         switch additive {
         case let .plus(expr1, expr2, _):
             let call = FunctionCallExpression(
@@ -238,10 +237,10 @@ public class CodeGenerator {
             return gen(call, scope: scope)
         }
     }
-    fileprivate func gen(_ unary: UnaryExpression, scope: Scope) -> (Reference, Scope) {
+    fileprivate func gen(_ unary: UnaryExpression, scope: Scope) -> Reference {
         switch unary.operator {
         case .and:
-            let (ref, scope1) = gen(unary.expression, scope: scope)
+            let ref = gen(unary.expression, scope: scope)
             let pointer: Reference
             switch ref {
             case .stack(let depth):
@@ -250,27 +249,27 @@ public class CodeGenerator {
                 pointer = .register(Reg.r10)
             default: unimplemented()
             }
-            return (pointer, scope1)
+            return pointer
         case .star:
-            let (ref, scope1) = gen(unary.expression, scope: scope)
+            let ref = gen(unary.expression, scope: scope)
             builder.mov(.r11, ref.asOperand())
             builder.mov(.r10, "[r11]")
-            return (.register(Reg.r10), scope1)
+            return .register(Reg.r10)
         }
     }
 
-    fileprivate func gen(_ functionCall: FunctionCallExpression, scope: Scope) -> (Reference, Scope) {
+    fileprivate func gen(_ functionCall: FunctionCallExpression, scope: Scope) -> Reference {
         switch functionCall.name {
         case .primary(.identifier(let identifier, _)):
             let arguments = functionCall.argumentList.map { self.gen($0, scope: scope) }
-            for (index, (reference, _)) in arguments.enumerated() {
+            for (index, reference) in arguments.enumerated() {
                 let dist = ArgReg.allCases[index]
                 builder.mov(dist, reference)
             }
             builder.call(identifier)
 //            Comment out until supporting multiple arguments than 6
 //            builder.add(.rsp, arguments.count * 8)
-            return (.register(Reg.rax), scope)
+            return .register(Reg.rax)
         default: unimplemented()
         }
     }
