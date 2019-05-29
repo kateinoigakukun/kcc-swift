@@ -4,6 +4,23 @@ import XCTest
 
 final class SemaTests: XCTestCase {
 
+    func testCheckAssignment() throws {
+        let content = """
+        int main(int arg) {
+            int val = 0;
+            val = 1;
+        }
+        """
+        let tokens = try lex(content)
+        let unit = try parse(tokens)
+        let tc = TypeChecker(unit: unit)
+        let checked = try tc.check()
+        let stmt = checked.externalDecls[0].functionDefinition?.compoundStatement.statement[0]
+        guard case .expression(let expr)? = stmt,
+            case .assignment(let assignment)? = expr.expression else { XCTFail(); return }
+        XCTAssertEqual(assignment.type, .int) 
+    }
+
     func testCheckFunctionDef() throws {
         let content = """
         int foo(int bar) {}
