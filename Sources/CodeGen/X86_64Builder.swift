@@ -135,8 +135,8 @@ extension CodeGenerator.Reference: Operandable {
         case .register(let srcReg): return srcReg.asOperand()
         case .primitive(let integer):
             return integer.description
-        case .stack(let depth):
-            return "[rbp - \(depth)]"
+        case .stack(let variable):
+            return "[rbp - \(variable.stackDepth)]"
         }
     }
 }

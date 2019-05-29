@@ -1,14 +1,17 @@
 import Parser
 
 public class CodeGenerator {
+    struct Variable {
+        let stackDepth: Int
+    }
     enum Reference {
-        case register(Operandable)
-        case stack(depth: Int)
+        case stack(Variable)
+        case register(Reg)
         case primitive(Int)
     }
     struct Binding {
         let type: TypeSpecifier
-        let ref: Reference
+        let variable: Variable
     }
     enum Context {
         case `func`(FunctionDefinition, returnLabel: String)
@@ -84,9 +87,9 @@ public class CodeGenerator {
                 }
                 let register = ArgReg.allCases[index]
                 stackDepth += 8
-                let reference = Reference.stack(depth: stackDepth)
+                let variable = Variable(stackDepth: stackDepth)
                 builder.push(register)
-                scope[id] = Binding(type: .int, ref: reference)
+                scope[id] = Binding(type: .int, variable: variable)
             }
             for decl in funcDefinition.compoundStatement.declaration {
                 let (newScope, newStackDepth) = gen(
@@ -113,8 +116,8 @@ public class CodeGenerator {
             case .identifier(let name):
                 // TODO: Use declarationSpecifier
                 stackDepth += 8
-                let reference = Reference.stack(depth: stackDepth)
-                scope[name] = Binding(type: .int, ref: reference)
+                let variable = Variable(stackDepth: stackDepth)
+                scope[name] = Binding(type: .int, variable: variable)
                 guard let initializer = initDeclarator.initializer else {
                     builder.push(0) // Zero initialize
                     continue
@@ -196,7 +199,7 @@ public class CodeGenerator {
         case .functionCall(let functionCall):
             return gen(functionCall, scope: scope)
         case .primary(.identifier(let identifier, _)):
-            return scope[identifier]!.ref
+            return .stack(scope[identifier]!.variable)
         case .primary(.constant(.integer(let integer), _)):
             return .primitive(integer)
         case .primary(.string(_, _)):
@@ -243,9 +246,9 @@ public class CodeGenerator {
             let ref = gen(unary.expression, scope: scope)
             let pointer: Reference
             switch ref {
-            case .stack(let depth):
+            case .stack(let variable):
                 builder.mov(.r10, .rbp)
-                builder.sub(.r10, depth)
+                builder.sub(.r10, variable.stackDepth)
                 pointer = .register(Reg.r10)
             default: unimplemented()
             }
